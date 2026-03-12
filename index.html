@@ -6,51 +6,86 @@
     <title>Memory Map App</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px 20px; background-color: #f4f7f9; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; }
-        h1 { color: #06C755; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f9; color: #333; margin: 0; padding: 20px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        h1 { color: #06C755; margin: 0; font-size: 1.8rem; }
+        #welcome { font-size: 1rem; color: #666; margin-top: 5px; }
+        
+        /* 記憶カードのデザイン */
+        #memory-list { display: flex; flex-direction: column; gap: 15px; padding-bottom: 30px; }
+        .memory-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .memory-date { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
+        .memory-text { font-size: 1rem; line-height: 1.5; margin-bottom: 15px; white-space: pre-wrap; }
+        
+        /* ボタンのデザイン */
+        .btn-container { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { display: inline-block; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; text-decoration: none; font-weight: bold; }
+        .btn-map { background-color: #E8F5E9; color: #2E7D32; }
+        .btn-img { background-color: #E3F2FD; color: #1565C0; }
+        
+        #loading { text-align: center; color: #06C755; font-weight: bold; margin-top: 30px; }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="header">
         <h1>Memory Map</h1>
         <div id="welcome">読み込み中...</div>
-        <p>ここは将来、お前の記録が<br>地図と写真で並ぶ場所だ。</p>
     </div>
 
+    <div id="loading">記憶を召喚中...</div>
+    <div id="memory-list"></div>
+
     <script>
-        // 【重要】さっきブラウザで開いたGASのURL（https://script.google.com/.../exec）をここに貼る！
+        // 【重要】さっきのGASのURLをここに貼る！
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxS4N8TrRihDFQJnNMjbiKYUTtCEIkX0rBqTpbxVkzUBidv-CcSi-Ym-TU9EtfPxY18/exec";
 
         async function fetchData() {
-            const welcomeText = document.getElementById('welcome');
-            welcomeText.innerHTML += "<br><span style='font-size: 0.8em; color: gray;'>記憶を召喚中...</span>";
-            
             try {
-                // GASにデータを要求（Fetch）する
                 const response = await fetch(GAS_URL);
-                const data = await response.json();
+                const data = await response.json(); // データを取得
                 
-                // 成功したらデータの件数を表示する
-                welcomeText.innerHTML += "<br><span style='color: blue;'>召喚成功！ " + data.length + "件の記憶を取得した！</span>";
-                console.log(data); // 裏側でデータを確認するための記述
+                document.getElementById('loading').style.display = 'none'; // ローディングの文字を消す
+                const listContainer = document.getElementById('memory-list');
+
+                // 1行目は見出し（日時, テキスト...）なので飛ばす。最新の記録を上にするため逆順（後ろから）ループする
+                for (let i = data.length - 1; i > 0; i--) {
+                    const row = data[i];
+                    const date = row[0]; // A列：日時
+                    const text = row[1]; // B列：テキスト
+                    const imgUrl = row[2]; // C列：画像URL
+                    const mapUrl = row[3]; // D列：位置情報
+
+                    // 空の行は無視する
+                    if (!date && !text && !imgUrl && !mapUrl) continue;
+
+                    // HTMLのカードを組み立てる
+                    let cardHtml = `<div class="memory-card">`;
+                    if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`;
+                    if (text) cardHtml += `<div class="memory-text">${text}</div>`;
+                    
+                    cardHtml += `<div class="btn-container">`;
+                    if (mapUrl) cardHtml += `<a href="${mapUrl}" target="_blank" class="btn btn-map">📍 地図を見る</a>`;
+                    if (imgUrl) cardHtml += `<a href="${imgUrl}" target="_blank" class="btn btn-img">🖼 画像を開く</a>`;
+                    cardHtml += `</div></div>`;
+
+                    // 画面に追加
+                    listContainer.innerHTML += cardHtml;
+                }
             } catch (error) {
-                welcomeText.innerHTML += "<br><span style='color: red;'>召喚失敗: " + error + "</span>";
+                document.getElementById('loading').innerText = "通信エラーが発生しました: " + error;
             }
         }
 
         async function main() {
             await liff.init({ liffId: "2009431992-aQfZHA0X" }); 
-            
-            if (!liff.isLoggedIn()) {
-                liff.login();
-            } else {
+            if (!liff.isLoggedIn()) { liff.login(); } 
+            else {
                 const profile = await liff.getProfile();
-                document.getElementById('welcome').innerText = "ようこそ、" + profile.displayName + "！";
-                
-                // 挨拶のあとに、GASへのデータ要求（fetchData）を開始する
-                fetchData();
+                document.getElementById('welcome').innerText = profile.displayName + "の記憶領域";
+                fetchData(); // データを取得して描画開始！
             }
         }
         main();
     </script>
+</body>
+</html>
