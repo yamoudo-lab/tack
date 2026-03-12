@@ -19,18 +19,38 @@
     </div>
 
     <script>
+        // 【重要】さっきブラウザで開いたGASのURL（https://script.google.com/.../exec）をここに貼る！
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxS4N8TrRihDFQJnNMjbiKYUTtCEIkX0rBqTpbxVkzUBidv-CcSi-Ym-TU9EtfPxY18/exec";
+
+        async function fetchData() {
+            const welcomeText = document.getElementById('welcome');
+            welcomeText.innerHTML += "<br><span style='font-size: 0.8em; color: gray;'>記憶を召喚中...</span>";
+            
+            try {
+                // GASにデータを要求（Fetch）する
+                const response = await fetch(GAS_URL);
+                const data = await response.json();
+                
+                // 成功したらデータの件数を表示する
+                welcomeText.innerHTML += "<br><span style='color: blue;'>召喚成功！ " + data.length + "件の記憶を取得した！</span>";
+                console.log(data); // 裏側でデータを確認するための記述
+            } catch (error) {
+                welcomeText.innerHTML += "<br><span style='color: red;'>召喚失敗: " + error + "</span>";
+            }
+        }
+
         async function main() {
-            // お前のLIFF IDで初期化
             await liff.init({ liffId: "2009431992-aQfZHA0X" }); 
             
             if (!liff.isLoggedIn()) {
-                liff.login(); // ログインしてなければログイン画面へ
+                liff.login();
             } else {
                 const profile = await liff.getProfile();
                 document.getElementById('welcome').innerText = "ようこそ、" + profile.displayName + "！";
+                
+                // 挨拶のあとに、GASへのデータ要求（fetchData）を開始する
+                fetchData();
             }
         }
         main();
     </script>
-</body>
-</html>
