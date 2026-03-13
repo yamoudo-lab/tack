@@ -258,10 +258,22 @@
                     if (!date || date === "日時") continue; 
                     
                     let textToShow = ""; let mapBtnUrl = ""; let imgBtnUrl = ""; 
+                    let directImgUrl = ""; // ★地図に埋め込む用のURL変数を用意
                     
-                    // 【進化1】先に画像URLを取得しておく（地図の吹き出しに使うため）
                     if (colD && colD.startsWith("http")) { 
-                        imgBtnUrl = colD.split(",")[0]; // 複数ある場合は最初の1枚目を使う
+                        imgBtnUrl = colD.split(",")[0]; 
+                        directImgUrl = imgBtnUrl; // 基本はそのまま
+                        
+                        // ▼▼▼ 【極限進化】Google DriveのURLを「直接表示できる画像」に魔改造する ▼▼▼
+                        if (imgBtnUrl.includes("drive.google.com/file/d/")) {
+                            const match = imgBtnUrl.match(/\/d\/(.+?)\//);
+                            if (match && match[1]) {
+                                const fileId = match[1];
+                                // サムネイル専用の直接リンクに変換！（これなら絶対に表示される）
+                                directImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+                            }
+                        }
+                        // ▲▲▲ 魔法陣ここまで ▲▲▲
                     }
                     
                     if (typeOrText === "画像") { 
@@ -269,26 +281,24 @@
                     } else if (typeOrText === "位置情報") { 
                         textToShow = "📍 " + colC; 
                         if (colE) { 
-                            // マップのリンクも綺麗に修正
-                            mapBtnUrl = `https://www.google.com/maps/search/?api=1&query=${colE}`; 
+                            // ついでに地図のリンクも一番安定する公式の書き方にコッソリ修正しておいたぞ
+                            mapBtnUrl = `https://maps.google.com/maps?q=${colE}`; 
                             
                             const latLngArr = String(colE).split(","); 
                             if(latLngArr.length === 2 && map) { 
                                 const position = { lat: parseFloat(latLngArr[0]), lng: parseFloat(latLngArr[1]) }; 
                                 const marker = new google.maps.Marker({ position: position, map: map, title: colC }); 
                                 
-                                // ▼▼▼ 【極限進化】吹き出し（InfoWindow）のリッチ化 ▼▼▼
                                 let infoHtml = `<div style="width: 160px; font-family: sans-serif;">`;
                                 infoHtml += `<div style="font-size: 11px; color: #888; margin-bottom: 6px;">${new Date(date).toLocaleString('ja-JP')}</div>`;
                                 
-                                // もし画像があれば、吹き出しの中に写真を埋め込む！
-                                if (imgBtnUrl) {
-                                    infoHtml += `<img src="${imgBtnUrl}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
+                                // ★ imgBtnUrl ではなく、変換した directImgUrl を埋め込む！
+                                if (directImgUrl) {
+                                    infoHtml += `<img src="${directImgUrl}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
                                 }
                                 
                                 infoHtml += `<div style="font-size: 13px; color: #333; font-weight: bold; line-height: 1.4;">${colC}</div>`;
                                 infoHtml += `</div>`;
-                                // ▲▲▲ 魔法陣ここまで ▲▲▲
 
                                 const infoWindow = new google.maps.InfoWindow({ content: infoHtml }); 
                                 marker.addListener("click", () => { infoWindow.open(map, marker); }); 
@@ -304,6 +314,7 @@
                     if (textToShow) cardHtml += `<div class="memory-text">${textToShow}</div>`; 
                     cardHtml += `<div class="btn-container">`; 
                     if (mapBtnUrl) cardHtml += `<a href="${mapBtnUrl}" target="_blank" class="btn btn-map">📍 地図を見る</a>`; 
+                    // 「画像を開く」ボタンの方は元のDriveビューワー(imgBtnUrl)のままでOK
                     if (imgBtnUrl) cardHtml += `<a href="${imgBtnUrl}" target="_blank" class="btn btn-img">🖼 画像を開く</a>`; 
                     cardHtml += `</div></div>`; 
                     listContainer.innerHTML += cardHtml; 
