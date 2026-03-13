@@ -31,20 +31,27 @@
         
         #input-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;}
-        .modal-content h2 { margin: 0 0 5px 0; font-size: 1.2rem; color: #333; text-align: center; }
         
-        .btn-add-more { width: 100%; padding: 10px; background-color: #f1f1f1; border: 1px dashed #aaa; border-radius: 8px; font-weight: bold; color: #555; cursor: pointer; font-size: 0.9rem;}
+        /* --- 進化：Instagram風のグリッドUI --- */
+        #preview-grid { display: flex; flex-wrap: wrap; gap: 10px; }
         
-        #preview-container { display: flex; flex-wrap: wrap; gap: 10px; min-height: 0px; }
-        .preview-box { position: relative; width: calc(33.3% - 7px); aspect-ratio: 1/1; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; background: #fafafa;}
+        /* 写真のサムネイル */
+        .preview-box { width: calc(33.333% - 6.7px); aspect-ratio: 1/1; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #ddd; background: #fafafa;}
         .preview-box img { width: 100%; height: 100%; object-fit: cover; }
-        .delete-btn { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; cursor: pointer; }
 
+        /* 追加用の「＋」の枠 */
+        .add-more-box { width: calc(33.333% - 6.7px); aspect-ratio: 1/1; border-radius: 8px; border: 2px dashed #ccc; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888; cursor: pointer; background: #fafafa; transition: 0.2s;}
+        .add-more-box:active { background: #eee; }
+        .add-more-box span { font-size: 28px; font-weight: bold; line-height: 1; margin-bottom: 2px;}
+        .add-more-box p { font-size: 0.7rem; margin: 0; font-weight: bold; }
+
+        /* GPSとテキストエリア */
         .gps-container { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; padding: 10px 15px; border-radius: 8px; border: 1px solid #eee;}
         #gps-status { font-size: 0.9rem; font-weight: bold; }
         .btn-gps-toggle { padding: 5px 12px; font-size: 0.8rem; border-radius: 20px; border: 1px solid #ccc; background: white; cursor: pointer; color: #333;}
-        
         textarea { width: 100%; height: 80px; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 1rem; box-sizing: border-box; resize: none; }
+        
         .action-btn { padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
         .btn-submit { background-color: #06C755; color: white; }
         .btn-cancel { background-color: white; color: #888; border: 1px solid #ddd;}
@@ -58,28 +65,24 @@
 
     <div class="fab-container">
         <div class="fab-sub" onclick="openTextModal()">📝</div>
-        
         <div class="fab-main" onclick="document.getElementById('main-trigger').click()">＋</div>
     </div>
 
     <input type="file" id="main-trigger" accept="image/*" capture="environment" onchange="handleDirectFiles(event)" style="display: none;">
-    <input type="file" id="add-more-trigger" accept="image/*" multiple onchange="handleDirectFiles(event)" style="display: none;">
 
     <div id="input-modal">
         <div class="modal-content">
-            <h2>✍️ 記憶を追加する</h2>
             
-            <button class="btn-add-more" onclick="document.getElementById('add-more-trigger').click()">📷 さらに写真を追加する</button>
-            
-            <div id="preview-container"></div>
+            <div id="preview-grid"></div>
             
             <div class="gps-container">
                 <span id="gps-status">⏳ 取得中...</span>
                 <button id="gps-toggle-btn" class="btn-gps-toggle" onclick="toggleGps()">外す</button>
             </div>
+            
             <textarea id="memo-input" placeholder="ここにメモを入力..."></textarea>
             
-            <button class="action-btn btn-submit" onclick="testSubmit()">送信テスト</button>
+            <button class="action-btn btn-submit" onclick="testSubmit()">🚀 送信する</button>
             <button class="action-btn btn-cancel" onclick="closeModal()">キャンセル</button>
         </div>
     </div>
@@ -107,7 +110,7 @@
                 document.getElementById('gps-toggle-btn').innerText = "外す";
                 getGps(); 
             }
-            event.target.value = '';
+            event.target.value = ''; // 連続で同じファイルを選べるようにリセット
         }
 
         function openTextModal() {
@@ -122,7 +125,6 @@
         function closeModal() {
             document.getElementById('input-modal').style.display = 'none';
             document.getElementById('main-trigger').value = "";
-            document.getElementById('add-more-trigger').value = "";
             document.getElementById('memo-input').value = "";
             document.getElementById('gps-status').innerText = "未取得";
             currentLat = null; currentLng = null; gpsEnabled = false;
@@ -130,13 +132,89 @@
             renderPreviews();
         }
 
+        // 【進化】Instagram風のグリッド描画魔法
         function renderPreviews() {
-            const container = document.getElementById('preview-container');
-            container.innerHTML = ''; 
+            const grid = document.getElementById('preview-grid');
+            grid.innerHTML = ''; // 一度全部消す
+            
+            // 撮った写真を順番に並べる
             stagingFiles.forEach((file, index) => {
+                const box = document.createElement('div');
+                box.className = 'preview-box';
+                
+                const img = document.createElement('img');
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const box = document.createElement('div'); box.className = 'preview-box';
-                    const img = document.createElement('img'); img.src = e.target.result;
-                    const deleteBtn = document.createElement('div'); deleteBtn.className = 'delete-btn';
-                    deleteBtn.innerText = '✕
+                reader.onload = function(e) { img.src = e.target.result; }
+                reader.readAsDataURL(file);
+                
+                const deleteBtn = document.createElement('div');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerText = '✕';
+                deleteBtn.onclick = function() { removeFile(index); };
+                
+                box.appendChild(img);
+                box.appendChild(deleteBtn);
+                grid.appendChild(box);
+            });
+
+            // 最後に、必ず「＋ 追加」の枠を置く
+            const addBox = document.createElement('div');
+            addBox.className = 'add-more-box';
+            addBox.onclick = function() { document.getElementById('main-trigger').click(); };
+            addBox.innerHTML = `<span>＋</span><p>追加</p>`;
+            grid.appendChild(addBox);
+        }
+
+        function removeFile(index) {
+            stagingFiles.splice(index, 1);
+            renderPreviews();
+        }
+
+        function getGps() {
+            if (!gpsEnabled) return;
+            const statusText = document.getElementById('gps-status');
+            statusText.innerText = "⏳ 取得中..."; statusText.style.color = "blue";
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        if(!gpsEnabled) return; 
+                        currentLat = position.coords.latitude; currentLng = position.coords.longitude;
+                        statusText.innerText = "✅ 位置情報あり"; statusText.style.color = "#06C755";
+                    },
+                    function(error) {
+                        statusText.innerText = "❌ 取得失敗"; statusText.style.color = "red";
+                        document.getElementById('gps-toggle-btn').innerText = "再取得"; gpsEnabled = false;
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            }
+        }
+
+        function toggleGps() {
+            const btn = document.getElementById('gps-toggle-btn');
+            const statusText = document.getElementById('gps-status');
+            if (gpsEnabled) {
+                gpsEnabled = false; currentLat = null; currentLng = null;
+                statusText.innerText = "🚫 位置情報なし"; statusText.style.color = "#888"; btn.innerText = "つける";
+            } else {
+                gpsEnabled = true; btn.innerText = "外す"; getGps();
+            }
+        }
+
+        function testSubmit() {
+            const memoText = document.getElementById('memo-input').value;
+            let resultMessage = "【送信テスト：以下のデータを一括送信します】\n\n";
+            resultMessage += "📷 写真枚数: " + stagingFiles.length + "枚\n";
+            stagingFiles.forEach((file, i) => { resultMessage += `  - ${i+1}枚目: ${file.name}\n`; });
+            resultMessage += "📍 GPS: " + (currentLat ? currentLat + ", " + currentLng : "なし") + "\n";
+            resultMessage += "📝 メモ: " + (memoText ? memoText : "なし");
+            alert(resultMessage);
+        }
+
+        function initMap() { map = new google.maps.Map(document.getElementById("map"), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 5, mapTypeControl: false, streetViewControl: false }); bounds = new google.maps.LatLngBounds(); }
+        async function fetchData() { try { const response = await fetch(GAS_URL); const data = await response.json(); document.getElementById('loading').style.display = 'none'; const listContainer = document.getElementById('memory-list'); let hasPins = false; for (let i = data.length - 1; i >= 0; i--) { const row = data[i]; const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || ""; if (!date || date === "日時") continue; let textToShow = ""; let mapBtnUrl = ""; let imgBtnUrl = ""; if (typeOrText === "画像") { textToShow = "📷 写真を記録しました"; if (colD.startsWith("http")) imgBtnUrl = colD; } else if (typeOrText === "位置情報") { textToShow = "📍 " + colC; if (colE) { mapBtnUrl = `https://www.google.com/maps/search/?api=1&query=${colE}`; const latLngArr = String(colE).split(","); if(latLngArr.length === 2 && map) { const position = { lat: parseFloat(latLngArr[0]), lng: parseFloat(latLngArr[1]) }; const marker = new google.maps.Marker({ position: position, map: map, title: colC }); const infoWindow = new google.maps.InfoWindow({ content: `<div style="font-size:12px; color:black;"><b>${new Date(date).toLocaleDateString('ja-JP')}</b><br>${colC}</div>` }); marker.addListener("click", () => { infoWindow.open(map, marker); }); bounds.extend(position); hasPins = true; } } else if (colD.startsWith("http")) { mapBtnUrl = colD; } } else { textToShow = typeOrText; } let cardHtml = `<div class="memory-card">`; if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`; if (textToShow) cardHtml += `<div class="memory-text">${textToShow}</div>`; cardHtml += `<div class="btn-container">`; if (mapBtnUrl) cardHtml += `<a href="${mapBtnUrl}" target="_blank" class="btn btn-map">📍 地図を見る</a>`; if (imgBtnUrl) cardHtml += `<a href="${imgBtnUrl}" target="_blank" class="btn btn-img">🖼 画像を開く</a>`; cardHtml += `</div></div>`; listContainer.innerHTML += cardHtml; } if (hasPins && map) { document.getElementById("map").style.display = "block"; map.fitBounds(bounds); } } catch (error) { document.getElementById('loading').innerText = "通信エラーが発生しました: " + error; } }
+        async function main() { try { if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') { initMap(); } await liff.init({ liffId: "2009431992-aQfZHA0X" }); if (!liff.isLoggedIn()) { liff.login(); } else { const profile = await liff.getProfile(); document.getElementById('welcome').innerText = profile.displayName + "の記憶領域"; fetchData(); } } catch (e) { document.getElementById('welcome').innerHTML = "<span style='color:red; font-weight:bold;'>エラー発生: " + e.message + "</span>"; document.getElementById('loading').style.display = 'none'; } }
+        main();
+    </script>
+</body>
+</html>
