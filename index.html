@@ -246,28 +246,51 @@
         
         async function fetchData() { 
             try { 
-                const response = await fetch(GAS_URL); const data = await response.json(); 
+                const response = await fetch(GAS_URL); 
+                const data = await response.json(); 
                 document.getElementById('loading').style.display = 'none'; 
-                const listContainer = document.getElementById('memory-list'); let hasPins = false; 
+                const listContainer = document.getElementById('memory-list'); 
+                let hasPins = false; 
                 
                 for (let i = data.length - 1; i >= 0; i--) { 
-                    const row = data[i]; const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || ""; 
+                    const row = data[i]; 
+                    const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || ""; 
                     if (!date || date === "日時") continue; 
                     
                     let textToShow = ""; let mapBtnUrl = ""; let imgBtnUrl = ""; 
                     
+                    // 【進化1】先に画像URLを取得しておく（地図の吹き出しに使うため）
+                    if (colD && colD.startsWith("http")) { 
+                        imgBtnUrl = colD.split(",")[0]; // 複数ある場合は最初の1枚目を使う
+                    }
+                    
                     if (typeOrText === "画像") { 
                         textToShow = "📷 写真を記録しました"; 
-                        if (colD.startsWith("http")) imgBtnUrl = colD; 
                     } else if (typeOrText === "位置情報") { 
                         textToShow = "📍 " + colC; 
                         if (colE) { 
-                            mapBtnUrl = `https://www.google.com/maps?q=${colE}`; 
+                            // マップのリンクも綺麗に修正
+                            mapBtnUrl = `https://www.google.com/maps/search/?api=1&query=${colE}`; 
+                            
                             const latLngArr = String(colE).split(","); 
                             if(latLngArr.length === 2 && map) { 
                                 const position = { lat: parseFloat(latLngArr[0]), lng: parseFloat(latLngArr[1]) }; 
                                 const marker = new google.maps.Marker({ position: position, map: map, title: colC }); 
-                                const infoWindow = new google.maps.InfoWindow({ content: `<div style="font-size:12px; color:black;"><b>${new Date(date).toLocaleDateString('ja-JP')}</b><br>${colC}</div>` }); 
+                                
+                                // ▼▼▼ 【極限進化】吹き出し（InfoWindow）のリッチ化 ▼▼▼
+                                let infoHtml = `<div style="width: 160px; font-family: sans-serif;">`;
+                                infoHtml += `<div style="font-size: 11px; color: #888; margin-bottom: 6px;">${new Date(date).toLocaleString('ja-JP')}</div>`;
+                                
+                                // もし画像があれば、吹き出しの中に写真を埋め込む！
+                                if (imgBtnUrl) {
+                                    infoHtml += `<img src="${imgBtnUrl}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
+                                }
+                                
+                                infoHtml += `<div style="font-size: 13px; color: #333; font-weight: bold; line-height: 1.4;">${colC}</div>`;
+                                infoHtml += `</div>`;
+                                // ▲▲▲ 魔法陣ここまで ▲▲▲
+
+                                const infoWindow = new google.maps.InfoWindow({ content: infoHtml }); 
                                 marker.addListener("click", () => { infoWindow.open(map, marker); }); 
                                 bounds.extend(position); hasPins = true; 
                             } 
@@ -275,8 +298,6 @@
                     } else { 
                         textToShow = typeOrText; 
                     } 
-                    
-                    if (colD && colD.startsWith("http") && !imgBtnUrl) { imgBtnUrl = colD.split(",")[0]; }
 
                     let cardHtml = `<div class="memory-card">`; 
                     if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`; 
