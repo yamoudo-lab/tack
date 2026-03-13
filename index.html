@@ -85,15 +85,15 @@
     </div>
 
     <script>
-        // 【重要2】GASのURLを貼る！
+        // 【重要2】GASのURLを貼る！（※ダブルクォーテーション " " は絶対に消さないこと！）
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxS4N8TrRihDFQJnNMjbiKYUTtCEIkX0rBqTpbxVkzUBidv-CcSi-Ym-TU9EtfPxY18/exec";
-        let map; let bounds;
-
+        
+        let map;
+        let bounds;
         let currentLat = null;
         let currentLng = null;
         let gpsEnabled = true;
 
-        // 【進化2】開いた瞬間にGPSを取得開始する
         function openModal() {
             document.getElementById('input-modal').style.display = 'flex';
             gpsEnabled = true;
@@ -112,7 +112,159 @@
             currentLat = null; currentLng = null;
         }
 
-        // 【進化1】カメラとフォルダを賢く切り替えるプレビュー魔法
         function previewImage(event, source) {
             const file = event.target.files[0];
-            // 片方を選んだら、もう片方のデータは空にする
+            if (source === 'camera') document.getElementById('gallery-input').value = "";
+            if (source === 'gallery') document.getElementById('camera-input').value = "";
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('photo-preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function getGps() {
+            if (!gpsEnabled) return;
+            const statusText = document.getElementById('gps-status');
+            statusText.innerText = "⏳ 取得中..."; statusText.style.color = "blue";
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        if(!gpsEnabled) return; 
+                        currentLat = position.coords.latitude;
+                        currentLng = position.coords.longitude;
+                        statusText.innerText = "✅ 位置情報あり"; statusText.style.color = "#06C755";
+                    },
+                    function(error) {
+                        statusText.innerText = "❌ 取得失敗"; statusText.style.color = "red";
+                        document.getElementById('gps-toggle-btn').innerText = "再取得";
+                        gpsEnabled = false;
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            }
+        }
+
+        function toggleGps() {
+            const btn = document.getElementById('gps-toggle-btn');
+            const statusText = document.getElementById('gps-status');
+
+            if (gpsEnabled) {
+                gpsEnabled = false;
+                currentLat = null; currentLng = null;
+                statusText.innerText = "🚫 位置情報なし"; statusText.style.color = "#888";
+                btn.innerText = "追加する";
+            } else {
+                gpsEnabled = true;
+                btn.innerText = "外す";
+                getGps();
+            }
+        }
+
+        function testSubmit() {
+            const photoFile = document.getElementById('camera-input').files[0] || document.getElementById('gallery-input').files[0];
+            const memoText = document.getElementById('memo-input').value;
+            
+            let resultMessage = "【取得データ確認】\n\n";
+            resultMessage += "📷 写真: " + (photoFile ? photoFile.name : "なし") + "\n";
+            resultMessage += "📍 GPS: " + (currentLat ? currentLat + ", " + currentLng : "なし") + "\n";
+            resultMessage += "📝 メモ: " + (memoText ? memoText : "なし");
+            alert(resultMessage);
+        }
+
+        function initMap() { 
+            map = new google.maps.Map(document.getElementById("map"), { 
+                center: { lat: 35.6895, lng: 139.6917 }, 
+                zoom: 5, 
+                mapTypeControl: false, 
+                streetViewControl: false 
+            }); 
+            bounds = new google.maps.LatLngBounds(); 
+        }
+
+        async function fetchData() { 
+            try { 
+                const response = await fetch(GAS_URL); 
+                const data = await response.json(); 
+                document.getElementById('loading').style.display = 'none'; 
+                const listContainer = document.getElementById('memory-list'); 
+                let hasPins = false; 
+
+                for (let i = data.length - 1; i >= 0; i--) { 
+                    const row = data[i]; 
+                    const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || ""; 
+                    if (!date || date === "日時") continue; 
+
+                    let textToShow = ""; let mapBtnUrl = ""; let imgBtnUrl = ""; 
+                    
+                    if (typeOrText === "画像") { 
+                        textToShow = "📷 写真を記録しました"; 
+                        if (colD.startsWith("http")) imgBtnUrl = colD; 
+                    } else if (typeOrText === "位置情報") { 
+                        textToShow = "📍 " + colC; 
+                        if (colE) { 
+                            // マップURLの生成バグもついでに公式のフォーマットに完全修正しておいた！
+                            mapBtnUrl = `https://www.google.com/maps/search/?api=1&query=${colE}`; 
+                            const latLngArr = String(colE).split(","); 
+                            if(latLngArr.length === 2 && map) { 
+                                const position = { lat: parseFloat(latLngArr[0]), lng: parseFloat(latLngArr[1]) }; 
+                                const marker = new google.maps.Marker({ position: position, map: map, title: colC }); 
+                                const infoWindow = new google.maps.InfoWindow({ content: `<div style="font-size:12px; color:black;"><b>${new Date(date).toLocaleDateString('ja-JP')}</b><br>${colC}</div>` }); 
+                                marker.addListener("click", () => { infoWindow.open(map, marker); }); 
+                                bounds.extend(position); hasPins = true; 
+                            } 
+                        } else if (colD.startsWith("http")) {
+                            mapBtnUrl = colD; 
+                        }
+                    } else { 
+                        textToShow = typeOrText; 
+                    } 
+                    
+                    let cardHtml = `<div class="memory-card">`; 
+                    if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`; 
+                    if (textToShow) cardHtml += `<div class="memory-text">${textToShow}</div>`; 
+                    cardHtml += `<div class="btn-container">`; 
+                    if (mapBtnUrl) cardHtml += `<a href="${mapBtnUrl}" target="_blank" class="btn btn-map">📍 地図を見る</a>`; 
+                    if (imgBtnUrl) cardHtml += `<a href="${imgBtnUrl}" target="_blank" class="btn btn-img">🖼 画像を開く</a>`; 
+                    cardHtml += `</div></div>`; 
+                    listContainer.innerHTML += cardHtml; 
+                } 
+                if (hasPins && map) { 
+                    document.getElementById("map").style.display = "block"; 
+                    map.fitBounds(bounds); 
+                } 
+            } catch (error) { 
+                document.getElementById('loading').innerText = "通信エラーが発生しました: " + error; 
+            } 
+        }
+
+        async function main() { 
+            try {
+                // Google Mapsの読み込みチェックを強化
+                if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
+                    initMap(); 
+                }
+                
+                await liff.init({ liffId: "2009431992-aQfZHA0X" }); 
+                if (!liff.isLoggedIn()) { 
+                    liff.login(); 
+                } else { 
+                    const profile = await liff.getProfile(); 
+                    document.getElementById('welcome').innerText = profile.displayName + "の記憶領域"; 
+                    fetchData(); 
+                } 
+            } catch (e) {
+                // エラーが起きたら画面に赤文字で原因を叫ぶ最強の装甲
+                document.getElementById('welcome').innerHTML = "<span style='color:red; font-weight:bold;'>エラー発生: " + e.message + "</span>";
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        main();
+    </script>
