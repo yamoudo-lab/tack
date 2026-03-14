@@ -299,7 +299,7 @@
                 const memoText = document.getElementById('memo-input').value; const gpsText = `${currentLat},${currentLng}`;
                 let base64Images = [];
                 for (let i = 0; i < stagingFiles.length; i++) {
-                    let compressedBase64 = await compressImage(stagingFiles[i], 1200, 1200, 0.7);
+                    let compressedBase64 = await compressImage(stagingFiles[i], 800, 800, 0.6);
                     base64Images.push({ filename: `liff_${Date.now()}_${i}.jpg`, base64: compressedBase64 });
                 }
                 const payload = { userId: currentUserId, source: "liff", memo: memoText, gps: gpsText, images: base64Images };
