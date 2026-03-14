@@ -7,6 +7,8 @@
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDNtKd51uBJx4cYXoteOq72GZmq7Re4Qf0"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
         body, html { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; background-color: #f4f7f9; }
         #map-section { flex: 0 0 45%; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
@@ -59,6 +61,10 @@
         .action-btn { padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s;}
         .btn-submit { background-color: #06C755; color: white; }
         .btn-cancel { background-color: white; color: #888; border: 1px solid #ddd;}
+        
+        /* ポップアップのフォントを綺麗にする追加CSS */
+        .swal2-title { font-size: 1.2rem !important; }
+        .swal2-html-container { font-size: 0.9rem !important; }
     </style>
 </head>
 <body>
@@ -104,7 +110,6 @@
         let map; let bounds; let currentLat = null; let currentLng = null;
         let stagingFiles = []; let modalMap = null; 
         
-        // ▼▼▼ パスポート（ユーザーID）を保存する変数を追加 ▼▼▼
         let currentUserId = ""; 
 
         window.galleryData = {}; window.memoData = {};
@@ -124,7 +129,10 @@
         async function handleAppendPhotos(event) {
             const files = Array.from(event.target.files);
             if (files.length === 0) return;
-            if (files.length > 5) { alert("⚠️ 一度に追加できるのは5枚までです！"); return; }
+            if (files.length > 5) { 
+                Swal.fire({ title: '注意', text: '一度に追加できるのは5枚までです！', icon: 'warning', confirmButtonColor: '#06C755' });
+                return; 
+            }
             showLoading("Uploading..."); 
             try {
                 let base64Images = [];
@@ -132,12 +140,16 @@
                     let compressed = await compressImage(files[i], 1200, 1200, 0.7);
                     base64Images.push({ filename: `liff_append_${Date.now()}_${i}.jpg`, base64: compressed });
                 }
-                // ★ userIdを同封
                 const payload = { userId: currentUserId, action: "appendImage", date: currentAppendDate, images: base64Images };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                alert("✅ 写真を追加しました！"); document.getElementById('append-photo-trigger').value = '';
+                
+                await Swal.fire({ title: '完了', text: '写真を追加しました！', icon: 'success', confirmButtonColor: '#06C755' });
+                document.getElementById('append-photo-trigger').value = '';
                 document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); fetchData(); 
-            } catch (error) { alert("❌ エラー: " + error); hideLoading(); }
+            } catch (error) { 
+                Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' });
+                hideLoading(); 
+            }
         }
 
         function openEditModal(dateStr) { currentEditDate = dateStr; document.getElementById('edit-memo-input').value = window.memoData[dateStr] || ""; document.getElementById('edit-modal').style.display = 'flex'; }
@@ -146,11 +158,15 @@
         async function submitEdit() {
             const newMemoText = document.getElementById('edit-memo-input').value; closeEditModal(); showLoading("Saving..."); 
             try {
-                // ★ userIdを同封
                 const payload = { userId: currentUserId, action: "update", date: currentEditDate, newMemo: newMemoText };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                alert("✅ メモを保存しました！"); document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); fetchData(); 
-            } catch (error) { alert("❌ 更新エラー: " + error); hideLoading(); }
+                
+                await Swal.fire({ title: '完了', text: 'メモを保存しました！', icon: 'success', confirmButtonColor: '#06C755' });
+                document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); fetchData(); 
+            } catch (error) { 
+                Swal.fire({ title: 'エラー', text: '更新エラー: ' + error, icon: 'error', confirmButtonColor: '#06C755' });
+                hideLoading(); 
+            }
         }
 
         function compressImage(file, maxWidth, maxHeight, quality) {
@@ -185,14 +201,30 @@
         }
 
         async function deleteSingleImage() {
-            if (!confirm("現在表示している『この写真1枚だけ』を削除しますか？")) return;
+            // ★超絶おしゃれな確認画面
+            const result = await Swal.fire({
+                title: '写真の削除',
+                text: "現在表示している『この写真1枚だけ』を削除しますか？",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#06C755',
+                confirmButtonText: '削除する',
+                cancelButtonText: 'やめる'
+            });
+            if (!result.isConfirmed) return;
+
             const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; closeLightbox(); showLoading("Deleting..."); 
             try {
-                // ★ userIdを同封
                 const payload = { userId: currentUserId, action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                alert("✅ 写真を削除しました。"); document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); initMap(); fetchData(); 
-            } catch (error) { alert("❌ 削除エラー: " + error); hideLoading(); }
+                
+                await Swal.fire({ title: '完了', text: '写真を削除しました。', icon: 'success', confirmButtonColor: '#06C755' });
+                document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); initMap(); fetchData(); 
+            } catch (error) { 
+                Swal.fire({ title: 'エラー', text: '削除エラー: ' + error, icon: 'error', confirmButtonColor: '#06C755' });
+                hideLoading(); 
+            }
         }
 
         function initModalMap(lat, lng) {
@@ -224,7 +256,9 @@
 
         function handleDirectFiles(event) {
             const files = Array.from(event.target.files); if (files.length === 0) return;
-            if (stagingFiles.length + files.length > 5) { alert("⚠️ 最大5枚までです。"); stagingFiles = stagingFiles.concat(files.slice(0, 5 - stagingFiles.length));
+            if (stagingFiles.length + files.length > 5) { 
+                Swal.fire({ title: '注意', text: '最大5枚までです。', icon: 'warning', confirmButtonColor: '#06C755' });
+                stagingFiles = stagingFiles.concat(files.slice(0, 5 - stagingFiles.length));
             } else { stagingFiles = stagingFiles.concat(files); }
             renderPreviews(); document.getElementById('input-modal').style.display = 'flex'; getGps(); event.target.value = ''; 
         }
@@ -255,7 +289,10 @@
 
         async function submitData() {
             if (modalMap) { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); }
-            if (!currentLat || !currentLng) { alert("⚠️ 場所が決定されていません。"); return; }
+            if (!currentLat || !currentLng) { 
+                Swal.fire({ title: '注意', text: '場所が決定されていません。', icon: 'warning', confirmButtonColor: '#06C755' });
+                return; 
+            }
             const btn = document.querySelector('.btn-submit'); btn.innerText = "Uploading..."; btn.disabled = true; 
             try {
                 const memoText = document.getElementById('memo-input').value; const gpsText = `${currentLat},${currentLng}`;
@@ -264,23 +301,42 @@
                     let compressedBase64 = await compressImage(stagingFiles[i], 1200, 1200, 0.7);
                     base64Images.push({ filename: `liff_${Date.now()}_${i}.jpg`, base64: compressedBase64 });
                 }
-                // ★ userIdを同封
                 const payload = { userId: currentUserId, source: "liff", memo: memoText, gps: gpsText, images: base64Images };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                alert("✅ 保存しました！"); closeModal();
+                
+                await Swal.fire({ title: '完了', text: '保存しました！', icon: 'success', confirmButtonColor: '#06C755' });
+                closeModal();
                 document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); initMap(); fetchData(); 
-            } catch (error) { alert("❌ エラー: " + error); } finally { btn.innerText = "🚀 送信する"; btn.disabled = false; }
+            } catch (error) { 
+                Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' });
+            } finally { btn.innerText = "🚀 送信する"; btn.disabled = false; }
         }
 
         async function deleteMemory(dateStr) {
-            if (!confirm("この投稿をまるごと削除しますか？\n（※元に戻せません）")) return;
+            // ★超絶おしゃれな確認画面
+            const result = await Swal.fire({
+                title: '投稿の削除',
+                text: "この投稿をまるごと削除しますか？（※元に戻せません）",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#06C755',
+                confirmButtonText: '削除する',
+                cancelButtonText: 'やめる'
+            });
+            if (!result.isConfirmed) return;
+
             showLoading("Deleting..."); 
             try {
-                // ★ userIdを同封
                 const payload = { userId: currentUserId, action: "delete", date: dateStr };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                alert("✅ 削除しました。"); document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); initMap(); fetchData(); 
-            } catch (error) { alert("❌ エラー: " + error); hideLoading(); }
+                
+                await Swal.fire({ title: '完了', text: '削除しました。', icon: 'success', confirmButtonColor: '#06C755' });
+                document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); initMap(); fetchData(); 
+            } catch (error) { 
+                Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' });
+                hideLoading(); 
+            }
         }
 
         function initMap() { 
@@ -289,7 +345,6 @@
         
         async function fetchData() { 
             try { 
-                // ▼▼▼ パスポート（userId）をくっつけてデータを要求する！ ▼▼▼
                 const response = await fetch(GAS_URL + "?userId=" + currentUserId); 
                 const data = await response.json(); 
                 hideLoading(); 
@@ -367,11 +422,13 @@
                     liff.login(); 
                 } else { 
                     const profile = await liff.getProfile(); 
-                    // ▼▼▼ パスポート（ユーザーID）を保存して、データを取得しにいく！ ▼▼▼
                     currentUserId = profile.userId;
                     fetchData(); 
                 } 
-            } catch (e) { alert("エラー発生: " + e.message); hideLoading(); } 
+            } catch (e) { 
+                Swal.fire({ title: 'エラー', text: "エラー発生: " + e.message, icon: 'error', confirmButtonColor: '#06C755' });
+                hideLoading(); 
+            } 
         }
         main();
     </script>
