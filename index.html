@@ -41,9 +41,18 @@
         .add-more-box span { font-size: 28px; font-weight: bold; line-height: 1; margin-bottom: 2px;}
         .add-more-box p { font-size: 0.7rem; margin: 0; font-weight: bold; }
 
-        .gps-container { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; padding: 10px 15px; border-radius: 8px; border: 1px solid #eee;}
+        /* ▼▼▼ 極限進化：ミニマップ用のCSS ▼▼▼ */
+        #modal-map-container { position: relative; width: 100%; height: 200px; display: none; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; box-shadow: inset 0 0 5px rgba(0,0,0,0.1);}
+        #modal-map { width: 100%; height: 100%; }
+        /* 画面中央に固定表示されるピン */
+        .center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); font-size: 36px; pointer-events: none; z-index: 10; text-shadow: 0px 3px 5px rgba(0,0,0,0.4); }
+        /* GPS再取得（現在地に戻る）ボタン */
+        .recenter-btn { position: absolute; bottom: 10px; right: 10px; width: 40px; height: 40px; background: white; border: none; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 10;}
+        /* ▲▲▲ 魔法陣ここまで ▲▲▲ */
+
+        .gps-container { display: flex; align-items: center; justify-content: center; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee;}
         #gps-status { font-size: 0.9rem; font-weight: bold; }
-        .btn-gps-toggle { padding: 5px 12px; font-size: 0.8rem; border-radius: 20px; border: 1px solid #ccc; background: white; cursor: pointer; color: #333;}
+        
         textarea { width: 100%; height: 80px; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 1rem; box-sizing: border-box; resize: none; }
         
         .action-btn { padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s;}
@@ -68,10 +77,17 @@
     <div id="input-modal">
         <div class="modal-content">
             <div id="preview-grid"></div>
-            <div class="gps-container">
-                <span id="gps-status">⏳ 取得中...</span>
-                <button id="gps-toggle-btn" class="btn-gps-toggle" onclick="toggleGps()" style="display:none;">外す</button>
+            
+            <div id="modal-map-container">
+                <div id="modal-map"></div>
+                <div class="center-pin">📍</div>
+                <button class="recenter-btn" onclick="getGps(true)">🎯</button>
             </div>
+            
+            <div class="gps-container">
+                <span id="gps-status">⏳ 位置情報を準備中...</span>
+            </div>
+            
             <textarea id="memo-input" placeholder="ここにメモを入力..."></textarea>
             
             <button class="action-btn btn-submit" onclick="submitData()">🚀 送信する</button>
@@ -85,10 +101,10 @@
         
         let map; let bounds;
         let currentLat = null; let currentLng = null;
-        let gpsEnabled = false;
         let stagingFiles = [];
+        let modalMap = null; // ミニマップ用の変数
 
-        // ▼▼▼ 【極限進化】画像を圧縮する最強の魔法陣 ▼▼▼
+        // 画像圧縮エンジン（変更なし）
         function compressImage(file, maxWidth, maxHeight, quality) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -97,30 +113,76 @@
                     const img = new Image();
                     img.src = event.target.result;
                     img.onload = function() {
-                        let width = img.width;
-                        let height = img.height;
-
-                        // 縦横比を保ちながらリサイズ（最大1200px）
-                        if (width > height) {
-                            if (width > maxWidth) { height = Math.round(height * (maxWidth / width)); width = maxWidth; }
-                        } else {
-                            if (height > maxHeight) { width = Math.round(width * (maxHeight / height)); height = maxHeight; }
-                        }
-
-                        // Canvasを使って画像を再描画（ここで圧縮される）
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        // JPEG形式で圧縮（quality=0.7なら画質70%で出力）
-                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-                        resolve(dataUrl);
+                        let width = img.width; let height = img.height;
+                        if (width > height) { if (width > maxWidth) { height = Math.round(height * (maxWidth / width)); width = maxWidth; }
+                        } else { if (height > maxHeight) { width = Math.round(width * (maxHeight / height)); height = maxHeight; } }
+                        const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
                     };
                     img.onerror = function(error) { reject(error); };
                 };
                 reader.onerror = function(error) { reject(error); };
             });
+        }
+
+        // ▼▼▼ 進化：ミニマップの魔法陣 ▼▼▼
+        function initModalMap(lat, lng) {
+            document.getElementById('modal-map-container').style.display = 'block';
+            const pos = { lat: lat, lng: lng };
+            
+            if (!modalMap) {
+                // 初めて開いた時にミニマップを作成
+                modalMap = new google.maps.Map(document.getElementById("modal-map"), {
+                    center: pos,
+                    zoom: 16,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false,
+                    gestureHandling: "greedy" // 指1本でスワイプできるようにする設定
+                });
+
+                // 地図を動かし終わった時に、中心の座標を取得するセンサー
+                modalMap.addListener('dragend', () => {
+                    const center = modalMap.getCenter();
+                    currentLat = center.lat();
+                    currentLng = center.lng();
+                    const statusText = document.getElementById('gps-status');
+                    statusText.innerText = "✍️ 手動で場所を設定中";
+                    statusText.style.color = "#FF9800"; // オレンジ色にして手動アピール
+                });
+            } else {
+                // すでにマップがある場合は中心を移動するだけ
+                modalMap.setCenter(pos);
+            }
+        }
+
+        function getGps(isRecenter = false) {
+            const statusText = document.getElementById('gps-status');
+            statusText.innerText = "⏳ 現在地を取得中..."; statusText.style.color = "blue";
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        currentLat = position.coords.latitude; 
+                        currentLng = position.coords.longitude;
+                        statusText.innerText = isRecenter ? "🎯 現在地に戻りました" : "✅ 現在地を取得しました"; 
+                        statusText.style.color = "#06C755";
+                        
+                        // 取得した座標でミニマップを描画！
+                        initModalMap(currentLat, currentLng);
+                    },
+                    function(error) {
+                        statusText.innerText = "❌ 取得失敗。地図を動かして場所を決めてください。"; 
+                        statusText.style.color = "red";
+                        // 失敗した場合でも、とりあえず東京駅を仮の中心にして地図を出す（手動で動かせるように）
+                        if (!currentLat) currentLat = 35.681236;
+                        if (!currentLng) currentLng = 139.767125;
+                        initModalMap(currentLat, currentLng);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            }
         }
         // ▲▲▲ 魔法陣ここまで ▲▲▲
 
@@ -129,22 +191,27 @@
             if (files.length === 0) return;
             stagingFiles = stagingFiles.concat(files);
             renderPreviews();
+            
             document.getElementById('input-modal').style.display = 'flex';
-            if (!gpsEnabled && currentLat === null) { gpsEnabled = true; getGps(); }
+            // モーダルを開いた瞬間にGPSを取りに行き、ミニマップを出す
+            getGps(); 
             event.target.value = ''; 
         }
 
         function openTextModal() {
             document.getElementById('input-modal').style.display = 'flex';
-            if (!gpsEnabled && currentLat === null) { gpsEnabled = true; getGps(); }
+            getGps(); 
         }
 
         function closeModal() {
             document.getElementById('input-modal').style.display = 'none';
             document.getElementById('main-trigger').value = "";
             document.getElementById('memo-input').value = "";
-            document.getElementById('gps-status').innerText = "未取得";
-            currentLat = null; currentLng = null; gpsEnabled = false;
+            document.getElementById('gps-status').innerText = "⏳ 位置情報を準備中...";
+            document.getElementById('modal-map-container').style.display = 'none';
+            
+            // 座標などのリセット
+            currentLat = null; currentLng = null;
             stagingFiles = []; renderPreviews();
         }
 
@@ -169,63 +236,36 @@
 
         function removeFile(index) { stagingFiles.splice(index, 1); renderPreviews(); }
 
-        function getGps() {
-            if (!gpsEnabled) return;
-            const statusText = document.getElementById('gps-status');
-            statusText.innerText = "⏳ 取得中..."; statusText.style.color = "blue";
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        if(!gpsEnabled) return; 
-                        currentLat = position.coords.latitude; currentLng = position.coords.longitude;
-                        statusText.innerText = "✅ 位置情報あり"; statusText.style.color = "#06C755";
-                    },
-                    function(error) {
-                        statusText.innerText = "❌ 取得失敗（設定を確認）"; statusText.style.color = "red";
-                        gpsEnabled = false;
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
-            }
-        }
-
         async function submitData() {
+            // 送信直前に、最終的なミニマップの中心座標を横取りする！
+            if (modalMap) {
+                currentLat = modalMap.getCenter().lat();
+                currentLng = modalMap.getCenter().lng();
+            }
+
             if (!currentLat || !currentLng) {
-                alert("⚠️ GPSが取得できていません。少し待つか、スマホの位置情報設定を確認してください。");
+                alert("⚠️ 場所が決定されていません。少し待つか、地図を動かしてください。");
                 return;
             }
 
             const btn = document.querySelector('.btn-submit');
-            // 【UX進化】今何をしているかをユーザーに知らせる
-            btn.innerText = "🗜️ 圧縮中...";
-            btn.disabled = true;
+            btn.innerText = "🗜️ 圧縮中..."; btn.disabled = true;
 
             try {
                 const memoText = document.getElementById('memo-input').value;
                 const gpsText = `${currentLat},${currentLng}`;
                 let base64Images = [];
 
-                // 【極限進化】選ばれた写真を圧縮してから送信データに変換する！
                 for (let i = 0; i < stagingFiles.length; i++) {
                     let file = stagingFiles[i];
-                    // 幅1200px、画質70%に圧縮！（これでファイルサイズが数MBから数百KBに激減する）
                     let compressedBase64 = await compressImage(file, 1200, 1200, 0.7);
-                    
-                    base64Images.push({
-                        filename: `liff_${Date.now()}_${i}.jpg`,
-                        base64: compressedBase64
-                    });
+                    base64Images.push({ filename: `liff_${Date.now()}_${i}.jpg`, base64: compressedBase64 });
                 }
 
                 const payload = { source: "liff", memo: memoText, gps: gpsText, images: base64Images };
 
                 btn.innerText = "📡 データベースへ送信中...";
-                
-                await fetch(GAS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify(payload)
-                });
+                await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
 
                 alert("✅ 記憶の保存に成功しました！");
                 closeModal();
@@ -237,87 +277,53 @@
             } catch (error) {
                 alert("❌ 通信エラーが発生しました: " + error);
             } finally {
-                btn.innerText = "🚀 送信する";
-                btn.disabled = false;
+                btn.innerText = "🚀 送信する"; btn.disabled = false;
             }
         }
 
+        // 大元の地図描画用（変更なし）
         function initMap() { map = new google.maps.Map(document.getElementById("map"), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 5, mapTypeControl: false, streetViewControl: false }); bounds = new google.maps.LatLngBounds(); }
         
         async function fetchData() { 
             try { 
-                const response = await fetch(GAS_URL); 
-                const data = await response.json(); 
+                const response = await fetch(GAS_URL); const data = await response.json(); 
                 document.getElementById('loading').style.display = 'none'; 
-                const listContainer = document.getElementById('memory-list'); 
-                let hasPins = false; 
-                
+                const listContainer = document.getElementById('memory-list'); let hasPins = false; 
                 for (let i = data.length - 1; i >= 0; i--) { 
-                    const row = data[i]; 
-                    const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || ""; 
+                    const row = data[i]; const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || ""; 
                     if (!date || date === "日時") continue; 
-                    
-                    let textToShow = ""; let mapBtnUrl = ""; let imgBtnUrl = ""; 
-                    let directImgUrl = ""; // ★地図に埋め込む用のURL変数を用意
-                    
+                    let textToShow = ""; let mapBtnUrl = ""; let imgBtnUrl = ""; let directImgUrl = "";
                     if (colD && colD.startsWith("http")) { 
-                        imgBtnUrl = colD.split(",")[0]; 
-                        directImgUrl = imgBtnUrl; // 基本はそのまま
-                        
-                        // ▼▼▼ 【極限進化】Google DriveのURLを「直接表示できる画像」に魔改造する ▼▼▼
+                        imgBtnUrl = colD.split(",")[0]; directImgUrl = imgBtnUrl; 
                         if (imgBtnUrl.includes("drive.google.com/file/d/")) {
                             const match = imgBtnUrl.match(/\/d\/(.+?)\//);
-                            if (match && match[1]) {
-                                const fileId = match[1];
-                                // サムネイル専用の直接リンクに変換！（これなら絶対に表示される）
-                                directImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
-                            }
+                            if (match && match[1]) directImgUrl = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w400`;
                         }
-                        // ▲▲▲ 魔法陣ここまで ▲▲▲
                     }
-                    
-                    if (typeOrText === "画像") { 
-                        textToShow = "📷 写真を記録しました"; 
-                    } else if (typeOrText === "位置情報") { 
-                        textToShow = "📍 " + colC; 
+                    if (typeOrText === "画像") { textToShow = "📷 写真を記録しました"; 
+                    } else if (typeOrText === "位置情報") { textToShow = "📍 " + colC; 
                         if (colE) { 
-                            // ついでに地図のリンクも一番安定する公式の書き方にコッソリ修正しておいたぞ
                             mapBtnUrl = `https://maps.google.com/maps?q=${colE}`; 
-                            
                             const latLngArr = String(colE).split(","); 
                             if(latLngArr.length === 2 && map) { 
                                 const position = { lat: parseFloat(latLngArr[0]), lng: parseFloat(latLngArr[1]) }; 
                                 const marker = new google.maps.Marker({ position: position, map: map, title: colC }); 
-                                
                                 let infoHtml = `<div style="width: 160px; font-family: sans-serif;">`;
                                 infoHtml += `<div style="font-size: 11px; color: #888; margin-bottom: 6px;">${new Date(date).toLocaleString('ja-JP')}</div>`;
-                                
-                                // ★ imgBtnUrl ではなく、変換した directImgUrl を埋め込む！
-                                if (directImgUrl) {
-                                    infoHtml += `<img src="${directImgUrl}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
-                                }
-                                
-                                infoHtml += `<div style="font-size: 13px; color: #333; font-weight: bold; line-height: 1.4;">${colC}</div>`;
-                                infoHtml += `</div>`;
-
+                                if (directImgUrl) infoHtml += `<img src="${directImgUrl}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
+                                infoHtml += `<div style="font-size: 13px; color: #333; font-weight: bold; line-height: 1.4;">${colC}</div></div>`;
                                 const infoWindow = new google.maps.InfoWindow({ content: infoHtml }); 
-                                marker.addListener("click", () => { infoWindow.open(map, marker); }); 
-                                bounds.extend(position); hasPins = true; 
+                                marker.addListener("click", () => { infoWindow.open(map, marker); }); bounds.extend(position); hasPins = true; 
                             } 
                         } else if (colD.startsWith("http")) { mapBtnUrl = colD; } 
-                    } else { 
-                        textToShow = typeOrText; 
-                    } 
-
+                    } else { textToShow = typeOrText; } 
                     let cardHtml = `<div class="memory-card">`; 
                     if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`; 
                     if (textToShow) cardHtml += `<div class="memory-text">${textToShow}</div>`; 
                     cardHtml += `<div class="btn-container">`; 
                     if (mapBtnUrl) cardHtml += `<a href="${mapBtnUrl}" target="_blank" class="btn btn-map">📍 地図を見る</a>`; 
-                    // 「画像を開く」ボタンの方は元のDriveビューワー(imgBtnUrl)のままでOK
                     if (imgBtnUrl) cardHtml += `<a href="${imgBtnUrl}" target="_blank" class="btn btn-img">🖼 画像を開く</a>`; 
-                    cardHtml += `</div></div>`; 
-                    listContainer.innerHTML += cardHtml; 
+                    cardHtml += `</div></div>`; listContainer.innerHTML += cardHtml; 
                 } 
                 if (hasPins && map) { document.getElementById("map").style.display = "block"; map.fitBounds(bounds); } 
             } catch (error) { document.getElementById('loading').innerText = "通信エラーが発生しました: " + error; } 
