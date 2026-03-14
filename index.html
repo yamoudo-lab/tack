@@ -13,16 +13,26 @@
         #map-section { flex: 0 0 45%; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
         #map { width: 100%; height: 100%; border: none; }
         
-        /* ▼▼▼ 極限進化：ヘッダーを極限までシンプルに！ ▼▼▼ */
         #header-pill { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 20; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 10px 24px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); text-align: center; border: 1px solid rgba(6, 199, 85, 0.3); }
         h1 { color: #06C755; margin: 0; font-size: 1.4rem; font-weight: 800; letter-spacing: 1px;}
-        /* ▲▲▲ ▲▲▲ */
 
         #list-section { flex: 1; overflow-y: auto; padding: 15px 15px 100px 15px; -webkit-overflow-scrolling: touch; }
         #memory-list { display: flex; flex-direction: column; gap: 15px; }
         .memory-card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: relative; scroll-margin-top: 15px;}
         
-        #loading { text-align: center; color: #06C755; font-weight: bold; padding: 20px;}
+        /* ▼▼▼ 極限進化：プロ仕様のクルクル回るスピナー ▼▼▼ */
+        #loading { display: flex; justify-content: center; align-items: center; color: #06C755; font-weight: bold; padding: 20px; font-size: 1rem;}
+        .spinner {
+            border: 3px solid rgba(6, 199, 85, 0.2);
+            border-top-color: #06C755;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* ▲▲▲ ▲▲▲ */
 
         .btn-delete { position: absolute; top: 15px; right: 15px; background-color: #fff0f0; color: #d32f2f; border: 1px solid #ffcdd2; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s;}
         .memory-date { font-size: 0.8rem; color: #888; margin-bottom: 10px; padding-right: 60px; font-weight: bold;}
@@ -82,7 +92,7 @@
     </div>
 
     <div id="list-section">
-        <div id="loading">記憶を召喚中...</div>
+        <div id="loading"><span class="spinner"></span> Loading data...</div>
         <div id="memory-list"></div>
     </div>
 
@@ -124,7 +134,6 @@
     </div>
 
     <script>
-        // 【重要2】GASのURLを貼る！
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxS4N8TrRihDFQJnNMjbiKYUTtCEIkX0rBqTpbxVkzUBidv-CcSi-Ym-TU9EtfPxY18/exec";
         
         let map; let bounds; let currentLat = null; let currentLng = null;
@@ -132,6 +141,15 @@
 
         window.galleryData = {}; window.memoData = {};
         let currentLbDate = ""; let currentLbIndex = 0; let currentEditDate = ""; let currentAppendDate = "";
+
+        // ▼ 全ての処理のロード文字をプロ仕様のスピナーに統一 ▼
+        function showLoading(text) {
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`;
+        }
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
 
         function jumpToCard(dateStr, lat, lng) {
             const card = document.getElementById('card-' + new Date(dateStr).getTime());
@@ -152,7 +170,7 @@
             if (files.length === 0) return;
             if (files.length > 5) { alert("⚠️ 一度に追加できるのは5枚までです！"); return; }
 
-            document.getElementById('loading').style.display = 'block'; document.getElementById('loading').innerText = "🗜️ 写真を圧縮＆追加中...";
+            showLoading("Uploading..."); // ★変更
             try {
                 let base64Images = [];
                 for (let i = 0; i < files.length; i++) {
@@ -160,12 +178,11 @@
                     base64Images.push({ filename: `liff_append_${Date.now()}_${i}.jpg`, base64: compressed });
                 }
                 const payload = { action: "appendImage", date: currentAppendDate, images: base64Images };
-                document.getElementById('loading').innerText = "📡 データベースへ送信中...";
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
-                alert("✅ 写真の追加に成功しました！"); document.getElementById('append-photo-trigger').value = '';
-                document.getElementById('memory-list').innerHTML = ''; document.getElementById('loading').innerText = "記憶を再召喚中..."; fetchData(); 
-            } catch (error) { alert("❌ エラー: " + error); document.getElementById('loading').style.display = 'none'; }
+                alert("✅ 写真を追加しました！"); document.getElementById('append-photo-trigger').value = '';
+                document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); fetchData(); 
+            } catch (error) { alert("❌ エラー: " + error); hideLoading(); }
         }
 
         function openEditModal(dateStr) { currentEditDate = dateStr; document.getElementById('edit-memo-input').value = window.memoData[dateStr] || ""; document.getElementById('edit-modal').style.display = 'flex'; }
@@ -173,12 +190,12 @@
         
         async function submitEdit() {
             const newMemoText = document.getElementById('edit-memo-input').value; closeEditModal();
-            document.getElementById('loading').style.display = 'block'; document.getElementById('loading').innerText = "💾 メモを上書き中...";
+            showLoading("Saving..."); // ★変更
             try {
                 const payload = { action: "update", date: currentEditDate, newMemo: newMemoText };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                alert("✅ メモを上書き保存しました！"); document.getElementById('memory-list').innerHTML = ''; document.getElementById('loading').innerText = "記憶を再召喚中..."; fetchData(); 
-            } catch (error) { alert("❌ 更新エラー: " + error); document.getElementById('loading').style.display = 'none'; }
+                alert("✅ メモを保存しました！"); document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); fetchData(); 
+            } catch (error) { alert("❌ 更新エラー: " + error); hideLoading(); }
         }
 
         function compressImage(file, maxWidth, maxHeight, quality) {
@@ -217,12 +234,12 @@
         async function deleteSingleImage() {
             if (!confirm("現在表示している『この写真1枚だけ』を削除しますか？")) return;
             const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; closeLightbox();
-            document.getElementById('loading').style.display = 'block'; document.getElementById('loading').innerText = "✂️ 写真を1枚消去中...";
+            showLoading("Deleting..."); // ★変更
             try {
                 const payload = { action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                alert("✅ 写真を1枚削除しました。"); document.getElementById('memory-list').innerHTML = ''; document.getElementById('loading').innerText = "記憶を再召喚中..."; initMap(); fetchData(); 
-            } catch (error) { alert("❌ 削除エラー: " + error); document.getElementById('loading').style.display = 'none'; }
+                alert("✅ 写真を削除しました。"); document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); initMap(); fetchData(); 
+            } catch (error) { alert("❌ 削除エラー: " + error); hideLoading(); }
         }
 
         function initModalMap(lat, lng) {
@@ -237,7 +254,7 @@
         }
 
         function getGps(isRecenter = false) {
-            const statusText = document.getElementById('gps-status'); statusText.innerText = "⏳ 現在地を取得中..."; statusText.style.color = "blue";
+            const statusText = document.getElementById('gps-status'); statusText.innerText = "⏳ GPS Loading..."; statusText.style.color = "blue"; // ★変更
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     function(position) {
@@ -264,7 +281,7 @@
         function closeModal() {
             document.getElementById('input-modal').style.display = 'none';
             document.getElementById('main-trigger').value = ""; document.getElementById('add-more-trigger').value = ""; document.getElementById('memo-input').value = "";
-            document.getElementById('gps-status').innerText = "⏳ 位置情報を準備中..."; document.getElementById('modal-map-container').style.display = 'none';
+            document.getElementById('gps-status').innerText = "⏳ GPS Loading..."; document.getElementById('modal-map-container').style.display = 'none'; // ★変更
             currentLat = null; currentLng = null; stagingFiles = []; renderPreviews();
         }
 
@@ -288,7 +305,7 @@
         async function submitData() {
             if (modalMap) { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); }
             if (!currentLat || !currentLng) { alert("⚠️ 場所が決定されていません。"); return; }
-            const btn = document.querySelector('.btn-submit'); btn.innerText = "🗜️ 圧縮中..."; btn.disabled = true;
+            const btn = document.querySelector('.btn-submit'); btn.innerText = "Uploading..."; btn.disabled = true; // ★変更
             try {
                 const memoText = document.getElementById('memo-input').value; const gpsText = `${currentLat},${currentLng}`;
                 let base64Images = [];
@@ -297,108 +314,7 @@
                     base64Images.push({ filename: `liff_${Date.now()}_${i}.jpg`, base64: compressedBase64 });
                 }
                 const payload = { source: "liff", memo: memoText, gps: gpsText, images: base64Images };
-                btn.innerText = "📡 送信中...";
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                alert("✅ 保存に成功しました！"); closeModal();
-                document.getElementById('loading').style.display = 'block'; document.getElementById('memory-list').innerHTML = ''; initMap(); fetchData(); 
-            } catch (error) { alert("❌ エラー: " + error); } finally { btn.innerText = "🚀 送信する"; btn.disabled = false; }
-        }
-
-        async function deleteMemory(dateStr) {
-            if (!confirm("この投稿（記憶）をまるごと全て削除しますか？\n（※元に戻せません）")) return;
-            document.getElementById('loading').style.display = 'block'; document.getElementById('loading').innerText = "🗑️ 記憶を消去中...";
-            try {
-                const payload = { action: "delete", date: dateStr };
-                await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                alert("✅ 記憶を完全に消去しました。");
-                document.getElementById('memory-list').innerHTML = ''; document.getElementById('loading').innerText = "記憶を再召喚中..."; initMap(); fetchData(); 
-            } catch (error) { alert("❌ エラー: " + error); document.getElementById('loading').style.display = 'none'; }
-        }
-
-        function initMap() { 
-            map = new google.maps.Map(document.getElementById("map"), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 5, disableDefaultUI: true, zoomControl: true, fullscreenControl: true }); bounds = new google.maps.LatLngBounds(); 
-        }
-        
-        async function fetchData() { 
-            try { 
-                const response = await fetch(GAS_URL); const data = await response.json(); 
-                document.getElementById('loading').style.display = 'none'; 
-                const listContainer = document.getElementById('memory-list'); let hasPins = false; 
-                
-                window.galleryData = {}; window.memoData = {}; 
-
-                for (let i = data.length - 1; i > 0; i--) { 
-                    const row = data[i]; const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || ""; 
-                    if (!date) continue; 
-                    
-                    const timeId = new Date(date).getTime(); 
-                    let textToShow = ""; let originalUrls = []; let directImgUrls = [];
-                    
-                    if (colD && colD.startsWith("http")) { 
-                        originalUrls = colD.split(","); 
-                        for (let u of originalUrls) {
-                            if (u.includes("drive.google.com/file/d/")) {
-                                const match = u.match(/\/d\/(.+?)\//);
-                                if (match && match[1]) directImgUrls.push(`https://drive.google.com/thumbnail?id=${match[1]}&sz=w400`);
-                            }
-                        }
-                    }
-                    
-                    window.galleryData[date] = originalUrls; window.memoData[date] = colC;
-                    let latStr = null; let lngStr = null;
-
-                    if (typeOrText === "画像") { textToShow = "📷 写真を記録しました"; 
-                    } else if (typeOrText === "位置情報") { textToShow = "📍 " + colC; 
-                        if (colE) { 
-                            const latLngArr = String(colE).split(","); 
-                            if(latLngArr.length === 2 && map) { 
-                                latStr = latLngArr[0]; lngStr = latLngArr[1];
-                                const position = { lat: parseFloat(latStr), lng: parseFloat(lngStr) }; 
-                                const marker = new google.maps.Marker({ position: position, map: map, title: colC }); 
-                                marker.addListener("click", () => { jumpToCard(date, latStr, lngStr); }); 
-                                bounds.extend(position); hasPins = true; 
-                            } 
-                        } 
-                    } else { textToShow = typeOrText; } 
-                    
-                    let cardHtml = `<div class="memory-card" id="card-${timeId}">`; 
-                    cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete">🗑️ まるごと削除</button>`;
-                    if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`; 
-                    if (textToShow) cardHtml += `<div class="memory-text">${textToShow}</div>`; 
-                    
-                    if (directImgUrls.length > 0) {
-                        cardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
-                        for(let j=0; j<directImgUrls.length; j++) {
-                            cardHtml += `<img src="${directImgUrls[j]}" class="thumb-img" onclick="openLightbox('${date}', ${j})">`;
-                        }
-                        cardHtml += `</div>`;
-                    }
-
-                    cardHtml += `<div class="btn-container">`; 
-                    if (latStr && lngStr) {
-                        cardHtml += `<button onclick="focusMap(${latStr}, ${lngStr})" class="btn btn-map">📍 マップ</button>`; 
-                        cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=${latStr},${lngStr}" target="_blank" class="btn btn-nav">🧭 ナビ開始</a>`; 
-                    }
-                    cardHtml += `<button onclick="openEditModal('${date}')" class="btn btn-edit">📝 メモ</button>`;
-                    cardHtml += `<button onclick="triggerAppendPhoto('${date}')" class="btn btn-photo">📸 写真追加</button>`;
-                    cardHtml += `</div></div>`; 
-                    
-                    listContainer.innerHTML += cardHtml; 
-                } 
-                if (hasPins && map) { map.fitBounds(bounds); } 
-            } catch (error) { document.getElementById('loading').innerText = "通信エラーが発生しました: " + error; } 
-        }
-
-        async function main() { 
-            try { 
-                if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') { initMap(); } 
-                await liff.init({ liffId: "2009431992-aQfZHA0X" }); 
-                // ▼▼▼ 進化：名前を画面に出力する処理を完全削除！ ▼▼▼
-                if (!liff.isLoggedIn()) { liff.login(); } else { fetchData(); } 
-                // ▲▲▲ ▲▲▲
-            } catch (e) { alert("エラー発生: " + e.message); document.getElementById('loading').style.display = 'none'; } 
-        }
-        main();
-    </script>
-</body>
-</html>
+                alert("✅ 保存しました！"); closeModal();
+                document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); initMap(); fetchData(); 
+            } catch (error) { alert("❌
