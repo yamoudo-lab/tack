@@ -5,53 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Map App</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDNtKd51uBJx4cYXoteOq72GZmq7Re4Qf0"></script>
     
     <style>
-        /* ▼▼▼ 進化：ページ全体の余白をゼロにし、スクロール制御の土台を作る ▼▼▼ */
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f9; color: #333; margin: 0; padding: 0; }
         
-        /* ▼▼▼ 極限進化：地図とヘッダーを画面上部にガッチリ固定する魔法 ▼▼▼ */
         #sticky-top {
-            position: sticky;
-            top: 0;
-            background-color: #f4f7f9;
-            padding: 15px 20px 10px 20px;
-            z-index: 100;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); /* スクロール時に浮いているように見せる影 */
+            position: sticky; top: 0; background-color: #f4f7f9; padding: 15px 20px 10px 20px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
         
         .header { text-align: center; margin-bottom: 10px; }
         h1 { color: #06C755; margin: 0; font-size: 1.8rem; }
-        #welcome { font-size: 0.9rem; color: #666; margin-top: 5px; }
+        /* ▼ ダサい名前をスタイリッシュにするための微調整 */
+        #welcome { font-size: 0.95rem; color: #888; margin-top: 5px; font-weight: bold; letter-spacing: 0.5px;}
         
-        /* 固定時は少し高さを抑えるのがアプリの鉄則 */
         #map { height: 280px; width: 100%; border-radius: 12px; border: 2px solid #06C755; display: none; box-sizing: border-box;}
         #loading { text-align: center; color: #06C755; font-weight: bold; margin-top: 10px; }
 
-        /* リスト部分は自由にスクロールできる */
         #memory-list { padding: 15px 20px 100px 20px; display: flex; flex-direction: column; gap: 15px; }
-        
-        /* ▼▼▼ 進化：削除ボタンを右上に配置するための相対位置 ▼▼▼ */
         .memory-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: relative; }
-        
-        /* 削除ボタン（右上固定） */
         .btn-delete { position: absolute; top: 15px; right: 15px; background-color: #fff0f0; color: #d32f2f; border: 1px solid #ffcdd2; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s;}
         .btn-delete:active { background-color: #ffcdd2; }
-        
-        /* 削除ボタンと重ならないように右に余白を開ける */
         .memory-date { font-size: 0.8rem; color: #888; margin-bottom: 10px; padding-right: 60px; }
-        
         .memory-text { font-size: 1rem; line-height: 1.5; margin-bottom: 15px; white-space: pre-wrap; }
         .btn-container { display: flex; gap: 10px; flex-wrap: wrap; }
         .btn { display: inline-block; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; text-decoration: none; font-weight: bold; }
         .btn-map { background-color: #E8F5E9; color: #2E7D32; }
         .btn-img { background-color: #E3F2FD; color: #1565C0; }
 
-        .fab-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 1000; align-items: flex-end;}
-        .fab-sub { width: 45px; height: 45px; background-color: white; color: #333; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; border: 1px solid #ddd;}
-        .fab-main { width: 65px; height: 65px; background-color: #06C755; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 35px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; }
+        /* ▼▼▼ 極限進化：FAB（浮きボタン）の3連デザイン ▼▼▼ */
+        .fab-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; align-items: flex-end;}
+        .fab-sub { width: 45px; height: 45px; background-color: white; color: #333; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; border: 1px solid #ddd; transition: 0.2s;}
+        .fab-sub:active { background-color: #f0f0f0; }
+        .fab-main { width: 60px; height: 60px; background-color: #06C755; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; transition: 0.2s;}
+        .fab-main:active { transform: scale(0.95); }
+        /* ▲▲▲ 魔法陣ここまで ▲▲▲ */
         
         #input-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;}
@@ -84,7 +72,7 @@
 <body>
     
     <div id="sticky-top">
-        <div class="header"><h1>Memory Map</h1><div id="welcome">読み込み中...</div></div>
+        <div class="header"><h1>Memory Map</h1><div id="welcome">Loading...</div></div>
         <div id="map"></div>
         <div id="loading">記憶を召喚中...</div>
     </div>
@@ -92,13 +80,13 @@
     <div id="memory-list"></div>
 
     <div class="fab-container">
-        <div class="fab-sub" onclick="openTextModal()">📝</div>
-        <div class="fab-main" onclick="document.getElementById('main-trigger').click()">＋</div>
+        <div class="fab-sub" onclick="openTextModal()" title="メモのみ">📝</div>
+        <div class="fab-sub" onclick="document.getElementById('gallery-trigger').click()" title="フォルダから複数選択">🖼️</div>
+        <div class="fab-main" onclick="document.getElementById('camera-trigger').click()" title="カメラ起動">📷</div>
     </div>
 
-    <input type="file" id="main-trigger" accept="image/*" capture="environment" onchange="handleDirectFiles(event)" style="display: none;">
-    <input type="file" id="add-more-trigger" accept="image/*" multiple onchange="handleDirectFiles(event)" style="display: none;">
-
+    <input type="file" id="camera-trigger" accept="image/*" capture="environment" onchange="handleDirectFiles(event)" style="display: none;">
+    <input type="file" id="gallery-trigger" accept="image/*" multiple onchange="handleDirectFiles(event)" style="display: none;">
     <div id="input-modal">
         <div class="modal-content">
             <div id="preview-grid"></div>
@@ -202,7 +190,7 @@
 
         function closeModal() {
             document.getElementById('input-modal').style.display = 'none';
-            document.getElementById('main-trigger').value = ""; document.getElementById('add-more-trigger').value = ""; document.getElementById('memo-input').value = "";
+            document.getElementById('camera-trigger').value = ""; document.getElementById('gallery-trigger').value = ""; document.getElementById('memo-input').value = "";
             document.getElementById('gps-status').innerText = "⏳ 位置情報を準備中...";
             document.getElementById('modal-map-container').style.display = 'none';
             currentLat = null; currentLng = null; stagingFiles = []; renderPreviews();
@@ -223,7 +211,8 @@
             });
             if (stagingFiles.length < 5) {
                 const addBox = document.createElement('div'); addBox.className = 'add-more-box';
-                addBox.onclick = function() { document.getElementById('add-more-trigger').click(); };
+                // ▼ ここもギャラリー用のトリガーを呼ぶ
+                addBox.onclick = function() { document.getElementById('gallery-trigger').click(); };
                 addBox.innerHTML = `<span>＋</span><p>追加</p>`;
                 grid.appendChild(addBox);
             }
@@ -309,11 +298,7 @@
                     } else { textToShow = typeOrText; } 
                     
                     let cardHtml = `<div class="memory-card">`; 
-                    
-                    // ▼▼▼ 進化：削除ボタンはカードの「一番最初（絶対配置用）」に持ってくる ▼▼▼
                     cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete">🗑️ 削除</button>`;
-                    // ▲▲▲ ▲▲▲
-                    
                     if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`; 
                     if (textToShow) cardHtml += `<div class="memory-text">${textToShow}</div>`; 
                     
@@ -328,7 +313,24 @@
             } catch (error) { document.getElementById('loading').innerText = "通信エラーが発生しました: " + error; } 
         }
 
-        async function main() { try { if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') { initMap(); } await liff.init({ liffId: "2009431992-aQfZHA0X" }); if (!liff.isLoggedIn()) { liff.login(); } else { const profile = await liff.getProfile(); document.getElementById('welcome').innerText = profile.displayName + "の記憶領域"; fetchData(); } } catch (e) { document.getElementById('welcome').innerHTML = "<span style='color:red; font-weight:bold;'>エラー発生: " + e.message + "</span>"; document.getElementById('loading').style.display = 'none'; } }
+        async function main() { 
+            try { 
+                if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') { initMap(); } 
+                await liff.init({ liffId: "2009431992-aQfZHA0X" }); 
+                if (!liff.isLoggedIn()) { 
+                    liff.login(); 
+                } else { 
+                    const profile = await liff.getProfile(); 
+                    // ▼▼▼ 進化：ダサい「の記憶領域」をスタイリッシュな英語に変更！ ▼▼▼
+                    document.getElementById('welcome').innerText = profile.displayName + "'s Memory Archive"; 
+                    // ▲▲▲ ▲▲▲
+                    fetchData(); 
+                } 
+            } catch (e) { 
+                document.getElementById('welcome').innerHTML = "<span style='color:red; font-weight:bold;'>エラー発生: " + e.message + "</span>"; 
+                document.getElementById('loading').style.display = 'none'; 
+            } 
+        }
         main();
     </script>
 </body>
