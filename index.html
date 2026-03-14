@@ -8,31 +8,45 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDNtKd51uBJx4cYXoteOq72GZmq7Re4Qf0"></script>
     
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f9; color: #333; margin: 0; padding: 0; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background-color: transparent; }
         
-        #sticky-top { position: sticky; top: 0; background-color: #f4f7f9; padding: 15px 20px 10px 20px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .header { text-align: center; margin-bottom: 10px; }
-        h1 { color: #06C755; margin: 0; font-size: 1.8rem; }
-        #welcome { font-size: 0.95rem; color: #888; margin-top: 5px; font-weight: bold; letter-spacing: 0.5px;}
+        /* ▼▼▼ 極限進化1：マップを画面全体（一番奥）に敷き詰める ▼▼▼ */
+        #map { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; border: none; }
         
-        #map { height: 280px; width: 100%; border-radius: 12px; border: 2px solid #06C755; display: none; box-sizing: border-box;}
-        #loading { text-align: center; color: #06C755; font-weight: bold; margin-top: 10px; }
+        /* ▼▼▼ 極限進化2：タイトルを「浮き島（ピル）」にする ▼▼▼ */
+        #header-pill {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%); z-index: 10;
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+            padding: 8px 24px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            text-align: center; border: 1px solid rgba(6, 199, 85, 0.3);
+        }
+        h1 { color: #06C755; margin: 0; font-size: 1.4rem; font-weight: 800;}
+        #welcome { font-size: 0.75rem; color: #555; margin-top: 2px; font-weight: bold; letter-spacing: 0.5px;}
+        
+        /* ▼▼▼ 極限進化3：透明なスクロール層を作る ▼▼▼ */
+        /* pointer-events: none で、透明な部分は裏側の地図を触れるようにする！ */
+        #content-layer { position: relative; z-index: 5; padding-top: 50vh; pointer-events: none; }
+        
+        /* リスト部分だけは触れるように（pointer-events: auto）戻す */
+        #memory-list { padding: 0 15px 120px 15px; display: flex; flex-direction: column; gap: 15px; pointer-events: auto; }
+        
+        /* カードを少し半透明＆ぼかしにして、裏の地図を透けさせる高級感 */
+        .memory-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 20px; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.12); position: relative; scroll-margin-top: 120px; border: 1px solid rgba(255,255,255,0.5);}
+        
+        #loading { text-align: center; color: #06C755; font-weight: bold; background: white; padding: 10px; border-radius: 20px; width: 200px; margin: 0 auto; pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
 
-        #memory-list { padding: 15px 20px 100px 20px; display: flex; flex-direction: column; gap: 15px; }
-        .memory-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: relative; scroll-margin-top: 380px;}
-        
         .btn-delete { position: absolute; top: 15px; right: 15px; background-color: #fff0f0; color: #d32f2f; border: 1px solid #ffcdd2; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s;}
-        .memory-date { font-size: 0.8rem; color: #888; margin-bottom: 10px; padding-right: 60px; }
-        .memory-text { font-size: 1rem; line-height: 1.5; margin-bottom: 15px; white-space: pre-wrap; }
+        .memory-date { font-size: 0.8rem; color: #888; margin-bottom: 10px; padding-right: 60px; font-weight: bold;}
+        .memory-text { font-size: 1rem; line-height: 1.5; margin-bottom: 15px; white-space: pre-wrap; color: #222;}
         .btn-container { display: flex; gap: 10px; flex-wrap: wrap; }
         .btn { display: inline-block; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; text-decoration: none; font-weight: bold; cursor:pointer;}
-        .btn-map { background-color: #E8F5E9; color: #2E7D32; border:none;}
+        .btn-map { background-color: #E8F5E9; color: #2E7D32; border:none; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
         
-        .thumb-img { height: 100px; min-width: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; cursor: pointer; transition: 0.2s; }
-        .thumb-img:active { opacity: 0.7; }
+        .thumb-img { height: 110px; min-width: 110px; object-fit: cover; border-radius: 10px; border: 1px solid #eee; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.08);}
+        .thumb-img:active { opacity: 0.7; transform: scale(0.98);}
 
         .fab-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; align-items: flex-end;}
-        .fab-main { width: 60px; height: 60px; background-color: #06C755; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; transition: 0.2s; font-weight: bold;}
+        .fab-main { width: 65px; height: 65px; background-color: #06C755; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 36px; box-shadow: 0 6px 15px rgba(6, 199, 85, 0.4); cursor: pointer; transition: 0.2s; font-weight: bold;}
 
         /* ライトボックスのUI */
         #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; justify-content: center; align-items: center; }
@@ -44,6 +58,7 @@
         .lb-next { right: 0; }
         .lb-counter { position: absolute; bottom: 30px; color: white; font-size: 1rem; font-weight: bold; letter-spacing: 2px;}
 
+        /* 入力モーダル */
         #input-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;}
         
@@ -71,13 +86,17 @@
 </head>
 <body>
     
-    <div id="sticky-top">
-        <div class="header"><h1>Memory Map</h1><div id="welcome">Loading...</div></div>
-        <div id="map"></div>
-        <div id="loading">記憶を召喚中...</div>
+    <div id="map"></div>
+
+    <div id="header-pill">
+        <h1>Memory Map</h1>
+        <div id="welcome">Loading...</div>
     </div>
 
-    <div id="memory-list"></div>
+    <div id="content-layer">
+        <div id="loading">記憶を召喚中...</div>
+        <div id="memory-list"></div>
+    </div>
 
     <div class="fab-container">
         <div class="fab-main" onclick="document.getElementById('main-trigger').click()">＋</div>
@@ -118,6 +137,29 @@
         let currentLbDate = "";  
         let currentLbIndex = 0;  
 
+        // ▼▼▼ 進化：スクロールとマップ移動の連携魔法 ▼▼▼
+        function jumpToCard(dateStr, lat, lng) {
+            const card = document.getElementById('card-' + new Date(dateStr).getTime());
+            if (card) {
+                // カードを画面の真ん中あたりにスクロールさせる
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // 選んだピンがカードの裏に隠れないように、少しずらしてマップも動かす
+                if (map && lat && lng) {
+                    map.panTo({lat: parseFloat(lat), lng: parseFloat(lng)});
+                }
+            }
+        }
+
+        function focusMap(lat, lng) {
+            // リストの「地図を開く」を押したら、画面の一番上（地図が見える位置）にスクロールし、マップをズーム！
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (map && lat && lng) {
+                map.panTo({lat: parseFloat(lat), lng: parseFloat(lng)});
+                map.setZoom(16);
+            }
+        }
+        // ▲▲▲ ▲▲▲
+
         function compressImage(file, maxWidth, maxHeight, quality) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader(); reader.readAsDataURL(file);
@@ -152,29 +194,21 @@
 
         function updateLightbox() {
             const urls = window.galleryData[currentLbDate];
-            let targetUrl = urls[currentLbIndex]; // 裏側のURL（Drive本来のリンク）
-            
-            // ▼▼▼ 進化：ライトボックス用に「高画質(w1000)の直接リンク」に変換して表示！ ▼▼▼
+            let targetUrl = urls[currentLbIndex];
             let displayUrl = targetUrl;
             if (targetUrl.includes("drive.google.com/file/d/")) {
                 const match = targetUrl.match(/\/d\/(.+?)\//);
-                if (match && match[1]) {
-                    displayUrl = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
-                }
+                if (match && match[1]) displayUrl = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
             }
-            // ▲▲▲ ▲▲▲
-
-            // 変換したURLを画像タグに入れることで、絶対に破れなくなる！
             document.getElementById('lb-img').src = displayUrl;
             document.getElementById('lb-counter').innerText = `${currentLbIndex + 1} / ${urls.length}`;
-            
             const navs = document.querySelectorAll('.lb-nav');
             navs.forEach(nav => nav.style.display = urls.length > 1 ? 'block' : 'none');
         }
 
         async function deleteSingleImage() {
             if (!confirm("現在表示している『この写真1枚だけ』を削除しますか？\n（Driveからも消去されます）")) return;
-            const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; // GASには元のURLを送る
+            const targetUrl = window.galleryData[currentLbDate][currentLbIndex];
             closeLightbox();
             document.getElementById('loading').style.display = 'block'; document.getElementById('loading').innerText = "✂️ 写真を1枚消去中...";
             try {
@@ -184,11 +218,6 @@
                 document.getElementById('memory-list').innerHTML = ''; document.getElementById('loading').innerText = "記憶を再召喚中...";
                 initMap(); fetchData(); 
             } catch (error) { alert("❌ 削除エラー: " + error); document.getElementById('loading').style.display = 'none'; }
-        }
-
-        function jumpToCard(dateStr) {
-            const card = document.getElementById('card-' + new Date(dateStr).getTime());
-            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function initModalMap(lat, lng) {
@@ -282,7 +311,16 @@
             } catch (error) { alert("❌ エラー: " + error); document.getElementById('loading').style.display = 'none'; }
         }
 
-        function initMap() { map = new google.maps.Map(document.getElementById("map"), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 5, mapTypeControl: false, streetViewControl: false }); bounds = new google.maps.LatLngBounds(); }
+        // ▼ マップのコントロールを消してスマホで見やすくする
+        function initMap() { 
+            map = new google.maps.Map(document.getElementById("map"), { 
+                center: { lat: 35.6895, lng: 139.6917 }, 
+                zoom: 5, 
+                disableDefaultUI: true, // 余計なボタンを消す
+                zoomControl: true       // ズームボタンだけ残す
+            }); 
+            bounds = new google.maps.LatLngBounds(); 
+        }
         
         async function fetchData() { 
             try { 
@@ -297,7 +335,7 @@
                     if (!date) continue; 
                     
                     const timeId = new Date(date).getTime(); 
-                    let textToShow = ""; let mapBtnUrl = ""; 
+                    let textToShow = ""; 
                     let originalUrls = []; let directImgUrls = [];
                     
                     if (colD && colD.startsWith("http")) { 
@@ -311,39 +349,25 @@
                     }
                     
                     window.galleryData[date] = originalUrls;
+                    
+                    let latStr = null; let lngStr = null;
 
                     if (typeOrText === "画像") { textToShow = "📷 写真を記録しました"; 
                     } else if (typeOrText === "位置情報") { textToShow = "📍 " + colC; 
                         if (colE) { 
-                            mapBtnUrl = `https://www.google.com/maps/search/?api=1&query=${colE}`; 
                             const latLngArr = String(colE).split(","); 
                             if(latLngArr.length === 2 && map) { 
-                                const position = { lat: parseFloat(latLngArr[0]), lng: parseFloat(latLngArr[1]) }; 
+                                latStr = latLngArr[0]; lngStr = latLngArr[1];
+                                const position = { lat: parseFloat(latStr), lng: parseFloat(lngStr) }; 
                                 const marker = new google.maps.Marker({ position: position, map: map, title: colC }); 
                                 
-                                // ▼▼▼ マップ吹き出しの進化（タップで開かないようにする） ▼▼▼
-                                let infoHtml = `<div style="width: 220px; font-family: sans-serif;">`;
-                                infoHtml += `<div style="font-size: 11px; color: #888; margin-bottom: 6px;">${new Date(date).toLocaleString('ja-JP')}</div>`;
-                                
-                                if (directImgUrls.length > 0) {
-                                    infoHtml += `<div style="display: flex; overflow-x: auto; gap: 5px; margin-bottom: 8px; padding-bottom: 4px;">`;
-                                    for(let j=0; j<directImgUrls.length; j++) {
-                                        // 修正：onclickを外し、クラスを外してタップ反応を消す！
-                                        infoHtml += `<img src="${directImgUrls[j]}" style="height: 100px; min-width: 100px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
-                                    }
-                                    infoHtml += `</div>`;
-                                }
-                                
-                                infoHtml += `<div style="font-size: 13px; color: #333; font-weight: bold; line-height: 1.4;">${colC}</div>`;
-                                // マップからは「リストへ飛ぶ」だけ！
-                                infoHtml += `<div style="text-align: right; margin-top: 5px;"><button onclick="jumpToCard('${date}')" class="btn" style="background:#E3F2FD; color:#1565C0; padding:4px 8px; font-size:11px; border:none; cursor:pointer;">⬇️ リストを見る</button></div>`;
-                                infoHtml += `</div>`;
+                                // ▼▼▼ 極限進化：ピンをタップしたら、リストへ直接スクロールする！ ▼▼▼
+                                marker.addListener("click", () => { jumpToCard(date, latStr, lngStr); }); 
                                 // ▲▲▲ ▲▲▲
-
-                                const infoWindow = new google.maps.InfoWindow({ content: infoHtml }); 
-                                marker.addListener("click", () => { infoWindow.open(map, marker); }); bounds.extend(position); hasPins = true; 
+                                
+                                bounds.extend(position); hasPins = true; 
                             } 
-                        } else if (colD.startsWith("http")) { mapBtnUrl = colD; } 
+                        } 
                     } else { textToShow = typeOrText; } 
                     
                     let cardHtml = `<div class="memory-card" id="card-${timeId}">`; 
@@ -354,18 +378,22 @@
                     if (directImgUrls.length > 0) {
                         cardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
                         for(let j=0; j<directImgUrls.length; j++) {
-                            cardHtml += `<img src="${directImgUrls[j]}" class="thumb-img" onclick="openLightbox('${date}', ${j})" style="height: 100px; min-width: 100px;">`;
+                            cardHtml += `<img src="${directImgUrls[j]}" class="thumb-img" onclick="openLightbox('${date}', ${j})">`;
                         }
                         cardHtml += `</div>`;
                     }
 
+                    // ▼▼▼ 極限進化：リストの「地図を開く」を押すと、アプリ内のマップでその場所にズームする！ ▼▼▼
                     cardHtml += `<div class="btn-container">`; 
-                    if (mapBtnUrl) cardHtml += `<a href="${mapBtnUrl}" target="_blank" class="btn btn-map">📍 地図を開く</a>`; 
+                    if (latStr && lngStr) {
+                        cardHtml += `<button onclick="focusMap(${latStr}, ${lngStr})" class="btn btn-map">📍 地図を中心にする</button>`; 
+                    }
                     cardHtml += `</div></div>`; 
+                    // ▲▲▲ ▲▲▲
                     
                     listContainer.innerHTML += cardHtml; 
                 } 
-                if (hasPins && map) { document.getElementById("map").style.display = "block"; map.fitBounds(bounds); } 
+                if (hasPins && map) { map.fitBounds(bounds); } 
             } catch (error) { document.getElementById('loading').innerText = "通信エラーが発生しました: " + error; } 
         }
 
