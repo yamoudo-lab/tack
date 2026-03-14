@@ -317,4 +317,102 @@
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 alert("✅ 保存しました！"); closeModal();
                 document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); initMap(); fetchData(); 
-            } catch (error) { alert("❌
+            } catch (error) { alert("❌ エラー: " + error); } finally { btn.innerText = "🚀 送信する"; btn.disabled = false; }
+        }
+
+        async function deleteMemory(dateStr) {
+            if (!confirm("この投稿をまるごと削除しますか？\n（※元に戻せません）")) return;
+            showLoading("Deleting..."); // ★変更
+            try {
+                const payload = { action: "delete", date: dateStr };
+                await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
+                alert("✅ 削除しました。");
+                document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); initMap(); fetchData(); 
+            } catch (error) { alert("❌ エラー: " + error); hideLoading(); }
+        }
+
+        function initMap() { 
+            map = new google.maps.Map(document.getElementById("map"), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 5, disableDefaultUI: true, zoomControl: true, fullscreenControl: true }); bounds = new google.maps.LatLngBounds(); 
+        }
+        
+        async function fetchData() { 
+            try { 
+                const response = await fetch(GAS_URL); const data = await response.json(); 
+                hideLoading(); 
+                const listContainer = document.getElementById('memory-list'); let hasPins = false; 
+                
+                window.galleryData = {}; window.memoData = {}; 
+
+                for (let i = data.length - 1; i > 0; i--) { 
+                    const row = data[i]; const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || ""; 
+                    if (!date) continue; 
+                    
+                    const timeId = new Date(date).getTime(); 
+                    let textToShow = ""; let originalUrls = []; let directImgUrls = [];
+                    
+                    if (colD && colD.startsWith("http")) { 
+                        originalUrls = colD.split(","); 
+                        for (let u of originalUrls) {
+                            if (u.includes("drive.google.com/file/d/")) {
+                                const match = u.match(/\/d\/(.+?)\//);
+                                if (match && match[1]) directImgUrls.push(`https://drive.google.com/thumbnail?id=${match[1]}&sz=w400`);
+                            }
+                        }
+                    }
+                    
+                    window.galleryData[date] = originalUrls; window.memoData[date] = colC;
+                    let latStr = null; let lngStr = null;
+
+                    if (typeOrText === "画像") { textToShow = "📷 写真を記録しました"; 
+                    } else if (typeOrText === "位置情報") { textToShow = "📍 " + colC; 
+                        if (colE) { 
+                            const latLngArr = String(colE).split(","); 
+                            if(latLngArr.length === 2 && map) { 
+                                latStr = latLngArr[0]; lngStr = latLngArr[1];
+                                const position = { lat: parseFloat(latStr), lng: parseFloat(lngStr) }; 
+                                const marker = new google.maps.Marker({ position: position, map: map, title: colC }); 
+                                marker.addListener("click", () => { jumpToCard(date, latStr, lngStr); }); 
+                                bounds.extend(position); hasPins = true; 
+                            } 
+                        } 
+                    } else { textToShow = typeOrText; } 
+                    
+                    let cardHtml = `<div class="memory-card" id="card-${timeId}">`; 
+                    cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete">🗑️ まるごと削除</button>`;
+                    if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`; 
+                    if (textToShow) cardHtml += `<div class="memory-text">${textToShow}</div>`; 
+                    
+                    if (directImgUrls.length > 0) {
+                        cardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
+                        for(let j=0; j<directImgUrls.length; j++) {
+                            cardHtml += `<img src="${directImgUrls[j]}" class="thumb-img" onclick="openLightbox('${date}', ${j})">`;
+                        }
+                        cardHtml += `</div>`;
+                    }
+
+                    cardHtml += `<div class="btn-container">`; 
+                    if (latStr && lngStr) {
+                        cardHtml += `<button onclick="focusMap(${latStr}, ${lngStr})" class="btn btn-map">📍 マップ</button>`; 
+                        cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=${latStr},${lngStr}" target="_blank" class="btn btn-nav">🧭 ナビ開始</a>`; 
+                    }
+                    cardHtml += `<button onclick="openEditModal('${date}')" class="btn btn-edit">📝 メモ</button>`;
+                    cardHtml += `<button onclick="triggerAppendPhoto('${date}')" class="btn btn-photo">📸 写真追加</button>`;
+                    cardHtml += `</div></div>`; 
+                    
+                    listContainer.innerHTML += cardHtml; 
+                } 
+                if (hasPins && map) { map.fitBounds(bounds); } 
+            } catch (error) { document.getElementById('loading').innerText = "通信エラーが発生しました: " + error; } 
+        }
+
+        async function main() { 
+            try { 
+                if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') { initMap(); } 
+                await liff.init({ liffId: "2009431992-aQfZHA0X" }); 
+                if (!liff.isLoggedIn()) { liff.login(); } else { fetchData(); } 
+            } catch (e) { alert("エラー発生: " + e.message); hideLoading(); } 
+        }
+        main();
+    </script>
+</body>
+</html>
