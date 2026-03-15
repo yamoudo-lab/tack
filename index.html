@@ -407,7 +407,16 @@
                             if(latLngArr.length === 2 && map) { 
                                 latStr = latLngArr[0]; lngStr = latLngArr[1];
                                 const position = { lat: parseFloat(latStr), lng: parseFloat(lngStr) }; 
-                                const marker = new google.maps.Marker({ position: position, map: map, title: colC }); 
+                            const customPin = {
+                                path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+                                fillColor: '#06C755', // テーマカラーの緑
+                                fillOpacity: 1,
+                                strokeWeight: 1,
+                                strokeColor: '#ffffff',
+                                scale: 1.5,
+                                anchor: new google.maps.Point(12, 22)
+                            };
+                            const marker = new google.maps.Marker({ position: position, map: map, title: colC, icon: customPin });
                                 marker.addListener("click", () => { jumpToCard(date, latStr, lngStr); }); 
                                 bounds.extend(position); hasPins = true; 
                             } 
@@ -417,7 +426,15 @@
                     let cardHtml = `<div class="memory-card" id="card-${timeId}">`; 
                     cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete">🗑️ まるごと削除</button>`;
                     if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`; 
-                    if (textToShow) cardHtml += `<div class="memory-text">${textToShow}</div>`; 
+                    if (textToShow) { 
+                        // 80文字以上、または3行以上なら折り畳む
+                        if (textToShow.length > 80 || (textToShow.match(/\n/g) || []).length >= 3) {
+                            cardHtml += `<div class="memory-text collapsed" id="memo-${timeId}">${textToShow}</div>`;
+                            cardHtml += `<div class="read-more-btn" id="rmbtn-${timeId}" onclick="toggleMemo('${timeId}')">▼ 続きを読む</div>`;
+                        } else {
+                            cardHtml += `<div class="memory-text">${textToShow}</div>`;
+                        }
+                    }
                     
                     if (directImgUrls.length > 0) {
                         cardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
