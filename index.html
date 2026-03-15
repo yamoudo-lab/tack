@@ -67,6 +67,22 @@
         .swal2-container { z-index: 10000 !important; }
         .swal2-title { font-size: 1.2rem !important; }
         .swal2-html-container { font-size: 0.9rem !important; }
+        /* ▼▼ 追加：メモの折り畳み用CSS ▼▼ */
+        .memory-text.collapsed {
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* 3行で切り捨てる */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 5px; /* ボタンとの隙間を詰める */
+        }
+        .read-more-btn {
+            color: #06C755;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -117,6 +133,18 @@
         let currentLbDate = ""; let currentLbIndex = 0; let currentEditDate = ""; let currentAppendDate = "";
 
         function showLoading(text) { document.getElementById('loading').style.display = 'flex'; document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`; }
+        // ▼▼ 追加：メモの開閉を実行する関数 ▼▼
+        function toggleMemo(id) {
+            const textDiv = document.getElementById(`memo-${id}`);
+            const btn = document.getElementById(`rmbtn-${id}`);
+            if (textDiv.classList.contains('collapsed')) {
+                textDiv.classList.remove('collapsed');
+                btn.innerText = "▲ 閉じる";
+            } else {
+                textDiv.classList.add('collapsed');
+                btn.innerText = "▼ 続きを読む";
+            }
+        }
         function hideLoading() { document.getElementById('loading').style.display = 'none'; }
 
         function jumpToCard(dateStr, lat, lng) {
