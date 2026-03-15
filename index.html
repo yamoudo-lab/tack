@@ -449,6 +449,12 @@
                 if (hasPins && map) { map.fitBounds(bounds); } 
             } catch (error) { document.getElementById('loading').innerText = "通信エラーが発生しました: " + error; } 
         }
+        // ▼▼ 追加：メモ欄をタップした時に、画面の中央まで引き上げる魔法 ▼▼
+        document.getElementById('memo-input').addEventListener('focus', function() {
+            setTimeout(() => {
+                this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300); // キーボードが下から上がりきるのを0.3秒待ってからスクロール！
+        });
 
         async function main() { 
             try { 
