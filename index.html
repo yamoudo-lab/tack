@@ -138,13 +138,9 @@
         }
         function focusMap(lat, lng) { if (map && lat && lng) { map.panTo({lat: parseFloat(lat), lng: parseFloat(lng)}); map.setZoom(14); } }
 
-        function triggerAppendCamera(dateStr) { 
+        function triggerAppendPhoto(dateStr) { 
             currentAppendDate = dateStr; 
-            document.getElementById('append-camera-trigger').click(); 
-        }
-        function triggerAppendFolder(dateStr) { 
-            currentAppendDate = dateStr; 
-            document.getElementById('append-folder-trigger').click(); 
+            document.getElementById('append-photo-trigger').click(); 
         }
 
         async function handleAppendPhotos(event) {
