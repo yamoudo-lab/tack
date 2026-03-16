@@ -96,7 +96,6 @@
     <input type="file" id="main-trigger" accept="image/*" capture="environment" onchange="handleDirectFiles(event)" style="display: none;">
     <input type="file" id="add-more-trigger" accept="image/*" multiple onchange="handleDirectFiles(event)" style="display: none;">
     <input type="file" id="append-photo-trigger" accept="image/*" multiple onchange="handleAppendPhotos(event)" style="display: none;">
-    <input type="file" id="append-camera-trigger" accept="image/*" capture="environment" onchange="handleAppendPhotos(event)" style="display: none;">
 
     <div id="lightbox">
         <div class="lb-close" onclick="closeLightbox()">×</div>
@@ -154,8 +153,10 @@
         }
         function focusMap(lat, lng) { if (map && lat && lng) { map.panTo({lat: parseFloat(lat), lng: parseFloat(lng)}); map.setZoom(14); } }
 
-        async function triggerAppendPhoto(dateStr) { 
+        function triggerAppendPhoto(dateStr) { 
             currentAppendDate = dateStr; 
+            document.getElementById('append-photo-trigger').click(); 
+        }
             
             const result = await Swal.fire({
                 title: '写真の追加',
