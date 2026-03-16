@@ -158,19 +158,6 @@
             document.getElementById('append-photo-trigger').click(); 
         }
             
-            const result = await Swal.fire({
-                title: '写真の追加',
-                text: 'どちらの方法で追加しますか？',
-                showDenyButton: true,
-                showCancelButton: true,
-                confirmButtonText: '📷 カメラで撮影',
-                denyButtonText: '📁 フォルダから',
-                cancelButtonText: 'キャンセル',
-                confirmButtonColor: '#06C755',
-                denyButtonColor: '#1565C0',
-                reverseButtons: true
-            });
-
             if (result.isConfirmed) {
                 // カメラを選択した場合
                 document.getElementById('append-camera-trigger').click();
