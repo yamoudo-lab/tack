@@ -120,6 +120,13 @@
         </div>
     </div>
 
+    <div id="map-section">
+        <div id="header-pill"><h1>Memory Map</h1></div>
+        <button id="mode-toggle-btn" onclick="toggleSelectionMode()">☑️ 複数選択</button> <div id="map"></div>
+    </div>
+
+    <div id="send-multiple-fab" onclick="shareSelectedMemories()">📤 0件をLINEで送る</div>
+    
     <script>
         // ▼▼▼ Firebaseの初期設定 ▼▼▼
         const firebaseConfig = {
