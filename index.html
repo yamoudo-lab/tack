@@ -14,7 +14,7 @@
         body, html { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; background-color: #f4f7f9; }
         #map-section { flex: 0 0 45%; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
         #map { width: 100%; height: 100%; border: none; }
-        #header-pill { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 20; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 10px 24px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); text-align: center; border: 1px solid rgba(6, 199, 85, 0.3); }
+        #header-pill { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 20; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 10px 24px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); text-align: center; border: 1px solid rgba(6, 199, 85, 0.3); transition: 0.3s; }
         h1 { color: #06C755; margin: 0; font-size: 1.4rem; font-weight: 800; letter-spacing: 1px;}
         #list-section { flex: 1; overflow-y: auto; padding: 15px 15px 100px 15px; -webkit-overflow-scrolling: touch; }
         #memory-list { display: flex; flex-direction: column; gap: 15px; }
@@ -71,7 +71,6 @@
         .memory-text.collapsed { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }
         .read-more-btn { color: #06C755; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-bottom: 15px; display: inline-block; }
         
-        /* ▼▼▼ 複数選択モード用のスタイル ▼▼▼ */
         .select-checkbox { display: none; position: absolute; top: 15px; left: 15px; width: 24px; height: 24px; z-index: 5; cursor: pointer; accent-color: #06C755; }
         .selection-mode .select-checkbox { display: block; pointer-events: none; }
         .selection-mode .memory-card { padding-left: 50px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
@@ -108,7 +107,7 @@
 
     <div id="lightbox">
         <div class="lb-close" onclick="closeLightbox()">×</div>
-        <button class="lb-delete" onclick="deleteSingleImage()">🗑️ この写真を消去</button>
+        <button class="lb-delete" id="lb-delete-btn" onclick="deleteSingleImage()">🗑️ この写真を消去</button>
         <div class="lb-nav lb-prev" onclick="changeImage(-1)">❮</div><img id="lb-img" src=""><div class="lb-nav lb-next" onclick="changeImage(1)">❯</div>
         <div id="lb-counter" class="lb-counter">1 / 1</div>
     </div>
@@ -132,7 +131,6 @@
     </div>
 
     <script>
-        // ▼▼▼ Firebaseの初期設定 ▼▼▼
         const firebaseConfig = {
             apiKey: "AIzaSyBP1gqwsVAdPm8tspL3SjOmZt_BiCHjlWs",
             authDomain: "memory-map-d062f.firebaseapp.com",
@@ -148,12 +146,16 @@
         
         let map; let bounds; let currentLat = null; let currentLng = null;
         let stagingFiles = []; let modalMap = null; 
-        let currentUserId = ""; 
+        
+        // ▼▼▼ ゲストモード（共有モード）用の変数を追加 ▼▼▼
+        let currentUserId = "";  // アプリを使っている本人のID
+        let targetUserId = "";   // データを取りに行く対象のID（共有された時は他人のIDになる）
+        let isSharedMode = false; // ゲストモード判定
+        let filterIds = [];      // 表示するピンのIDリスト
 
         window.galleryData = {}; window.memoData = {};
         let currentLbDate = ""; let currentLbIndex = 0; let currentEditDate = ""; let currentAppendDate = "";
         
-        // ▼ 複数選択用の変数
         let isSelectionMode = false;
         let selectedMemories = [];
 
@@ -215,7 +217,7 @@
                     return await storageRef.getDownloadURL();
                 });
                 let uploadedUrls = await Promise.all(uploadPromises);
-                const payload = { userId: currentUserId, action: "appendImage", date: currentAppendDate, images: uploadedUrls };
+                const payload = { userId: targetUserId, action: "appendImage", date: currentAppendDate, images: uploadedUrls };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
                 await Swal.fire({ title: '完了', text: '写真を追加しました！', icon: 'success', confirmButtonColor: '#06C755' });
@@ -233,7 +235,7 @@
         async function submitEdit() {
             const newMemoText = document.getElementById('edit-memo-input').value; closeEditModal(); showLoading("Saving..."); 
             try {
-                const payload = { userId: currentUserId, action: "update", date: currentEditDate, newMemo: newMemoText };
+                const payload = { userId: targetUserId, action: "update", date: currentEditDate, newMemo: newMemoText };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
                 await Swal.fire({ title: '完了', text: 'メモを保存しました！', icon: 'success', confirmButtonColor: '#06C755' });
@@ -255,6 +257,8 @@
             document.getElementById('lb-img').src = urls[currentLbIndex]; 
             document.getElementById('lb-counter').innerText = `${currentLbIndex + 1} / ${urls.length}`;
             const navs = document.querySelectorAll('.lb-nav'); navs.forEach(nav => nav.style.display = urls.length > 1 ? 'block' : 'none');
+            // ゲストモードなら個別の写真削除ボタンも隠す
+            document.getElementById('lb-delete-btn').style.display = isSharedMode ? 'none' : 'block';
         }
 
         async function deleteSingleImage() {
@@ -279,12 +283,12 @@
             Swal.fire({ title: '削除しました', icon: 'success', timer: 1500, showConfirmButton: false });
 
             try {
-                const payload = { userId: currentUserId, action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
+                const payload = { userId: targetUserId, action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
                 fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-                    .then(() => fetch(GAS_URL + "?userId=" + currentUserId)) 
+                    .then(() => fetch(GAS_URL + "?userId=" + targetUserId)) 
                     .then(res => res.json())
                     .then(freshData => {
-                        localStorage.setItem("memoryMapCache_" + currentUserId, JSON.stringify(freshData));
+                        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
                         renderData(freshData); 
                     });
             } catch (error) { 
@@ -374,13 +378,13 @@
                 });
                 let uploadedUrls = await Promise.all(uploadPromises);
 
-                const payload = { userId: currentUserId, source: "liff", memo: memoText, gps: gpsText, images: uploadedUrls };
+                const payload = { userId: targetUserId, source: "liff", memo: memoText, gps: gpsText, images: uploadedUrls };
 
                 fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-                    .then(() => fetch(GAS_URL + "?userId=" + currentUserId)) 
+                    .then(() => fetch(GAS_URL + "?userId=" + targetUserId)) 
                     .then(res => res.json())
                     .then(freshData => {
-                        localStorage.setItem("memoryMapCache_" + currentUserId, JSON.stringify(freshData));
+                        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
                         renderData(freshData);
                     });
 
@@ -433,12 +437,12 @@
             Swal.fire({ title: '削除しました', icon: 'success', timer: 1500, showConfirmButton: false });
 
             try {
-                const payload = { userId: currentUserId, action: "delete", date: dateStr };
+                const payload = { userId: targetUserId, action: "delete", date: dateStr };
                 fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-                    .then(() => fetch(GAS_URL + "?userId=" + currentUserId))
+                    .then(() => fetch(GAS_URL + "?userId=" + targetUserId))
                     .then(res => res.json())
                     .then(freshData => {
-                        localStorage.setItem("memoryMapCache_" + currentUserId, JSON.stringify(freshData));
+                        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
                         renderData(freshData); 
                     });
             } catch (error) { 
@@ -451,7 +455,8 @@
         }
         
         async function fetchData() {
-            const cacheKey = "memoryMapCache_" + currentUserId;
+            // ▼ ターゲット（自分か他人か）でキャッシュも分ける
+            const cacheKey = "memoryMapCache_" + targetUserId;
             const cachedDataStr = localStorage.getItem(cacheKey);
             if (cachedDataStr) {
                 const cachedData = JSON.parse(cachedDataStr);
@@ -460,7 +465,8 @@
             }
 
             try {
-                const response = await fetch(GAS_URL + "?userId=" + currentUserId);
+                // ▼ GASへリクエストを飛ばす時も、ターゲットのIDを使う
+                const response = await fetch(GAS_URL + "?userId=" + targetUserId);
                 const freshData = await response.json();
 
                 if (JSON.stringify(freshData) !== cachedDataStr) {
@@ -490,6 +496,12 @@
                 if (!date) continue;
 
                 const timeId = new Date(date).getTime();
+
+                // ▼▼▼ 魔法のフィルター：ゲストモードなら、指定されたピン以外は全部無視（スキップ）する ▼▼▼
+                if (isSharedMode && !filterIds.includes(String(timeId))) {
+                    continue; 
+                }
+
                 let textToShow = ""; let originalUrls = []; 
 
                 if (colD && colD.startsWith("http")) {
@@ -513,10 +525,13 @@
                     }
                 } else { textToShow = typeOrText; }
 
-                // ▼▼▼ カードに複数選択用の仕掛け（onclickとcheckbox）を組み込み済み ▼▼▼
-                let cardHtml = `<div class="memory-card" id="card-${timeId}" onclick="if(isSelectionMode) toggleCardSelection('${date}', '${timeId}')">`;
-                cardHtml += `<input type="checkbox" id="cb-${timeId}" class="select-checkbox" style="display:none;">`;
-                cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete">🗑️ まるごと削除</button>`;
+                // ▼ ゲストモードの時は onclick や 削除ボタン を無効化する
+                let cardHtml = `<div class="memory-card" id="card-${timeId}" ${!isSharedMode ? `onclick="if(isSelectionMode) toggleCardSelection('${date}', '${timeId}')"` : ''}>`;
+                
+                if (!isSharedMode) {
+                    cardHtml += `<input type="checkbox" id="cb-${timeId}" class="select-checkbox" style="display:none;">`;
+                    cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete">🗑️ まるごと削除</button>`;
+                }
                 
                 if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`;
                 if (textToShow) {
@@ -541,9 +556,13 @@
                     cardHtml += `<button onclick="focusMap(${latStr}, ${lngStr})" class="btn btn-map">📍 マップ</button>`;
                     cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=$${latStr},${lngStr}" target="_blank" class="btn btn-nav">🧭 ナビ開始</a>`;
                 }
-                cardHtml += `<button onclick="openEditModal('${date}')" class="btn btn-edit">📝 メモ</button>`;
-                cardHtml += `<button onclick="triggerAppendPhoto('${date}')" class="btn btn-photo">📸 写真追加</button>`;
-                cardHtml += `<button onclick="shareMemory('${date}')" class="btn btn-share">📤 LINEで送る</button>`;
+                
+                // ▼ ゲストモードの時は 編集・写真追加・再共有ボタン を隠す
+                if (!isSharedMode) {
+                    cardHtml += `<button onclick="openEditModal('${date}')" class="btn btn-edit">📝 メモ</button>`;
+                    cardHtml += `<button onclick="triggerAppendPhoto('${date}')" class="btn btn-photo">📸 写真追加</button>`;
+                    cardHtml += `<button onclick="shareMemory('${date}')" class="btn btn-share">📤 LINEで送る</button>`;
+                }
                 cardHtml += `</div></div>`;
 
                 listContainer.innerHTML += cardHtml;
@@ -557,7 +576,6 @@
             }, 300); 
         });
 
-        // ▼▼▼ 複数選択モード用の関数群（正しく外に出したぞ） ▼▼▼
         function toggleSelectionMode() {
             isSelectionMode = !isSelectionMode;
             const btn = document.getElementById('mode-toggle-btn');
@@ -618,8 +636,9 @@
                 return;
             }
 
+            // ▼▼▼ パスポート（自分のuid）をURLに仕込む！ ▼▼▼
             const timeIds = selectedMemories.map(d => new Date(d).getTime()).join(',');
-            const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${timeIds}`;
+            const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${timeIds}&uid=${currentUserId}`;
 
             const bubbles = selectedMemories.map(dateStr => {
                 const urls = window.galleryData[dateStr];
@@ -659,7 +678,6 @@
             }
         }
 
-        // ▼▼▼ 単体送信用の関数（元通りに独立させたぞ） ▼▼▼
         async function shareMemory(dateStr) {
             if (!liff.isApiAvailable('shareTargetPicker')) {
                 Swal.fire({ title: 'エラー', text: 'この環境では共有機能が使えません。', icon: 'error', confirmButtonColor: '#06C755' });
@@ -670,9 +688,9 @@
             const memoText = window.memoData[dateStr] || "Memory Mapからの共有";
             const imageUrl = (urls && urls.length > 0) ? urls[0] : "https://koransha.com/images/noimage.png"; 
 
-            // ここでもフィルター用のURLを仕込んでおく（1件だけだが、専用モードで開かせるため）
+            // ▼▼▼ こちらも同様に、パスポート（自分のuid）を仕込む！ ▼▼▼
             const timeId = new Date(dateStr).getTime();
-            const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${timeId}`;
+            const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${timeId}&uid=${currentUserId}`;
 
             const flexMessage = {
                 type: "flex",
@@ -722,6 +740,25 @@
                 } else { 
                     const profile = await liff.getProfile(); 
                     currentUserId = profile.userId;
+                    targetUserId = currentUserId; // 基本は自分自身のデータを狙う
+
+                    // ▼▼▼ URLのパスポート（ゲストモードの魔法）を解析 ▼▼▼
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const uidParam = urlParams.get('uid');
+                    const filterParam = urlParams.get('filter');
+
+                    if (uidParam && filterParam) {
+                        targetUserId = uidParam; // ターゲットを「送信者のデータ」に切り替え！
+                        filterIds = filterParam.split(',');
+                        isSharedMode = true; // ゲストモード発動！
+
+                        // ゲストモード専用の見た目に変更（追加・編集などを禁止）
+                        document.querySelector('.fab-container').style.display = 'none';
+                        document.getElementById('mode-toggle-btn').style.display = 'none';
+                        document.getElementById('header-pill').innerHTML = `<h1>Shared Map 🎁</h1>`;
+                        document.getElementById('header-pill').style.border = "2px solid #FF9800";
+                    }
+
                     fetchData(); 
                 } 
             } catch (e) { 
