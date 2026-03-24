@@ -7,7 +7,9 @@
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDNtKd51uBJx4cYXoteOq72GZmq7Re4Qf0"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-storage-compat.js"></script>
     <style>
         body, html { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; background-color: #f4f7f9; }
         #map-section { flex: 0 0 45%; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
@@ -42,7 +44,6 @@
         .lb-next { right: 0; }
         .lb-counter { position: absolute; bottom: 30px; color: white; font-size: 1rem; font-weight: bold; letter-spacing: 2px;}
         
-        /* 100dvhとflex-shrinkでキーボードのカオスを無効化 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px 20px 60px 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; max-height: 90dvh; overflow-y: auto;}
         #preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; flex-shrink: 0;}
@@ -108,6 +109,15 @@
     </div>
 
     <script>
+        // ▼▼▼ Firebaseの初期設定 ▼▼▼
+        const firebaseConfig = {
+            // ★ここにさっきコピーした firebaseConfig の中身を丸ごと貼り付ける！★
+            // 例: apiKey: "AIzaSy...", authDomain: "...", projectId: "...", ...
+        };
+        firebase.initializeApp(firebaseConfig);
+        const storage = firebase.storage();
+        // ▲▲▲ Firebaseの初期設定 終了 ▲▲▲
+
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxS4N8TrRihDFQJnNMjbiKYUTtCEIkX0rBqTpbxVkzUBidv-CcSi-Ym-TU9EtfPxY18/exec";
         
         let map; let bounds; let currentLat = null; let currentLng = null;
@@ -118,19 +128,17 @@
         let currentLbDate = ""; let currentLbIndex = 0; let currentEditDate = ""; let currentAppendDate = "";
 
         function showLoading(text) { document.getElementById('loading').style.display = 'flex'; document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`; }
+        function hideLoading() { document.getElementById('loading').style.display = 'none'; }
         
         function toggleMemo(id) {
             const textDiv = document.getElementById(`memo-${id}`);
             const btn = document.getElementById(`rmbtn-${id}`);
             if (textDiv.classList.contains('collapsed')) {
-                textDiv.classList.remove('collapsed');
-                btn.innerText = "▲ 閉じる";
+                textDiv.classList.remove('collapsed'); btn.innerText = "▲ 閉じる";
             } else {
-                textDiv.classList.add('collapsed');
-                btn.innerText = "▼ 続きを読む";
+                textDiv.classList.add('collapsed'); btn.innerText = "▼ 続きを読む";
             }
         }
-        function hideLoading() { document.getElementById('loading').style.display = 'none'; }
 
         function jumpToCard(dateStr, lat, lng) {
             const card = document.getElementById('card-' + new Date(dateStr).getTime());
@@ -143,6 +151,25 @@
             document.getElementById('append-photo-trigger').click(); 
         }
 
+        // ▼▼ 画像をBlob（ファイルデータ）に変換する関数（Firebase用）▼▼
+        function compressImageToBlob(file, maxWidth, maxHeight, quality) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    URL.revokeObjectURL(img.src); 
+                    let width = img.width; let height = img.height;
+                    if (width > height) { if (width > maxWidth) { height = Math.round(height * (maxWidth / width)); width = maxWidth; }
+                    } else { if (height > maxHeight) { width = Math.round(width * (maxHeight / height)); height = maxHeight; } }
+                    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                    // ここがFirebase用にBlobを返すように進化！
+                    canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', quality);
+                };
+                img.onerror = error => reject(error);
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
         async function handleAppendPhotos(event) {
             const files = Array.from(event.target.files);
             if (files.length === 0) return;
@@ -150,14 +177,19 @@
                 Swal.fire({ title: '注意', text: '一度に追加できるのは5枚までです！', icon: 'warning', confirmButtonColor: '#06C755' });
                 return; 
             }
-            showLoading("Uploading..."); 
+            showLoading("Uploading to Firebase..."); 
             try {
-                let base64Images = [];
+                let uploadedUrls = [];
                 for (let i = 0; i < files.length; i++) {
-                    let compressed = await compressImage(files[i], 800, 800, 0.6);
-                    base64Images.push({ filename: `liff_append_${Date.now()}_${i}.jpg`, base64: compressed });
+                    // Firebaseなら1600pxの高画質でも余裕で速い！
+                    let blob = await compressImageToBlob(files[i], 1600, 1600, 0.85);
+                    let filename = `append_${Date.now()}_${i}.jpg`;
+                    let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
+                    await storageRef.put(blob);
+                    let downloadUrl = await storageRef.getDownloadURL();
+                    uploadedUrls.push(downloadUrl); // GASには生成されたURLだけを送る
                 }
-                const payload = { userId: currentUserId, action: "appendImage", date: currentAppendDate, images: base64Images };
+                const payload = { userId: currentUserId, action: "appendImage", date: currentAppendDate, images: uploadedUrls };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
                 await Swal.fire({ title: '完了', text: '写真を追加しました！', icon: 'success', confirmButtonColor: '#06C755' });
@@ -186,22 +218,6 @@
             }
         }
 
-        function compressImage(file, maxWidth, maxHeight, quality) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = function() {
-                    URL.revokeObjectURL(img.src); 
-                    let width = img.width; let height = img.height;
-                    if (width > height) { if (width > maxWidth) { height = Math.round(height * (maxWidth / width)); width = maxWidth; }
-                    } else { if (height > maxHeight) { width = Math.round(width * (maxHeight / height)); height = maxHeight; } }
-                    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', quality));
-                };
-                img.onerror = error => reject(error);
-                img.src = URL.createObjectURL(file);
-            });
-        }
-
         function openLightbox(dateStr, index) { currentLbDate = dateStr; currentLbIndex = index; updateLightbox(); document.getElementById('lightbox').style.display = 'flex'; }
         function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
         function changeImage(step) {
@@ -209,11 +225,10 @@
             if (currentLbIndex < 0) currentLbIndex = urls.length - 1; if (currentLbIndex >= urls.length) currentLbIndex = 0; updateLightbox();
         }
         function updateLightbox() {
-            const urls = window.galleryData[currentLbDate]; let displayUrl = urls[currentLbIndex];
-            if (displayUrl.includes("drive.google.com/file/d/")) {
-                const match = displayUrl.match(/\/d\/(.+?)\//); if (match && match[1]) displayUrl = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
-            }
-            document.getElementById('lb-img').src = displayUrl; document.getElementById('lb-counter').innerText = `${currentLbIndex + 1} / ${urls.length}`;
+            const urls = window.galleryData[currentLbDate]; 
+            // ドライブの小細工はもう不要。FirebaseのURLをそのまま使う。
+            document.getElementById('lb-img').src = urls[currentLbIndex]; 
+            document.getElementById('lb-counter').innerText = `${currentLbIndex + 1} / ${urls.length}`;
             const navs = document.querySelectorAll('.lb-nav'); navs.forEach(nav => nav.style.display = urls.length > 1 ? 'block' : 'none');
         }
 
@@ -305,16 +320,23 @@
             }
             
             const btn = document.querySelector('#input-modal .btn-submit'); 
-            btn.innerText = "Uploading..."; btn.disabled = true; 
+            btn.innerText = "Uploading to Firebase..."; btn.disabled = true; 
             
             try {
                 const memoText = document.getElementById('memo-input').value; const gpsText = `${currentLat},${currentLng}`;
-                let base64Images = [];
+                let uploadedUrls = [];
+                // Firebaseへ直接画像を送信！
                 for (let i = 0; i < stagingFiles.length; i++) {
-                    let compressedBase64 = await compressImage(stagingFiles[i], 800, 800, 0.6);
-                    base64Images.push({ filename: `liff_${Date.now()}_${i}.jpg`, base64: compressedBase64 });
+                    let blob = await compressImageToBlob(stagingFiles[i], 1600, 1600, 0.85);
+                    let filename = `liff_${Date.now()}_${i}.jpg`;
+                    let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
+                    await storageRef.put(blob);
+                    let downloadUrl = await storageRef.getDownloadURL();
+                    uploadedUrls.push(downloadUrl); // FirebaseのURLを取得
                 }
-                const payload = { userId: currentUserId, source: "liff", memo: memoText, gps: gpsText, images: base64Images };
+
+                // GASには、取得したFirebaseのURLのリストを送るだけ！
+                const payload = { userId: currentUserId, source: "liff", memo: memoText, gps: gpsText, images: uploadedUrls };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
                 closeModal();
@@ -391,16 +413,11 @@
                 if (!date) continue;
 
                 const timeId = new Date(date).getTime();
-                let textToShow = ""; let originalUrls = []; let directImgUrls = [];
+                let textToShow = ""; let originalUrls = []; 
 
+                // FirebaseのURLがそのまま入っている
                 if (colD && colD.startsWith("http")) {
                     originalUrls = colD.split(",");
-                    for (let u of originalUrls) {
-                        if (u.includes("drive.google.com/file/d/")) {
-                            const match = u.match(/\/d\/(.+?)\//);
-                            if (match && match[1]) directImgUrls.push(`https://drive.google.com/thumbnail?id=${match[1]}&sz=w400`);
-                        }
-                    }
                 }
 
                 window.galleryData[date] = originalUrls; window.memoData[date] = colC;
@@ -432,10 +449,11 @@
                     }
                 }
 
-                if (directImgUrls.length > 0) {
+                if (originalUrls.length > 0) {
                     cardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
-                    for(let j=0; j<directImgUrls.length; j++) {
-                        cardHtml += `<img src="${directImgUrls[j]}" class="thumb-img" onclick="openLightbox('${date}', ${j})">`;
+                    for(let j=0; j<originalUrls.length; j++) {
+                        // FirebaseのURLをそのまま使う！
+                        cardHtml += `<img src="${originalUrls[j]}" class="thumb-img" onclick="openLightbox('${date}', ${j})">`;
                     }
                     cardHtml += `</div>`;
                 }
@@ -443,7 +461,7 @@
                 cardHtml += `<div class="btn-container">`;
                 if (latStr && lngStr) {
                     cardHtml += `<button onclick="focusMap(${latStr}, ${lngStr})" class="btn btn-map">📍 マップ</button>`;
-                    cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=${latStr},${lngStr}" target="_blank" class="btn btn-nav">🧭 ナビ開始</a>`;
+                    cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=$${latStr},${lngStr}" target="_blank" class="btn btn-nav">🧭 ナビ開始</a>`;
                 }
                 cardHtml += `<button onclick="openEditModal('${date}')" class="btn btn-edit">📝 メモ</button>`;
                 cardHtml += `<button onclick="triggerAppendPhoto('${date}')" class="btn btn-photo">📸 写真追加</button>`;
