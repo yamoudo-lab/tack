@@ -546,6 +546,73 @@
             }, 300); 
         });
 
+        async function shareMemory(dateStr) {
+            // LIFF環境でShare Target Pickerが使えるかチェック
+            if (!liff.isApiAvailable('shareTargetPicker')) {
+                Swal.fire({ title: 'エラー', text: 'この環境では共有機能が使えません。', icon: 'error', confirmButtonColor: '#06C755' });
+                return;
+            }
+
+            // 送信するデータを準備
+            const urls = window.galleryData[dateStr];
+            const memoText = window.memoData[dateStr] || "Memory Mapからの共有";
+            // 画像があれば1枚目を使用、なければデフォルトのダミー画像
+            const imageUrl = (urls && urls.length > 0) ? urls[0] : "https://koransha.com/images/noimage.png"; 
+
+            // LINEに送るリッチカード（Flex Message）の設計図
+            const flexMessage = {
+                type: "flex",
+                altText: "Memory Mapから写真が届きました",
+                contents: {
+                    type: "bubble",
+                    hero: {
+                        type: "image",
+                        url: imageUrl,
+                        size: "full",
+                        aspectRatio: "20:13",
+                        aspectMode: "cover"
+                    },
+                    body: {
+                        type: "box",
+                        layout: "vertical",
+                        contents: [
+                            { type: "text", text: "Memory Map", weight: "bold", color: "#06C755", size: "sm" },
+                            { type: "text", text: memoText, weight: "bold", size: "lg", margin: "md", wrap: true }
+                        ]
+                    },
+                    footer: {
+                        type: "box",
+                        layout: "vertical",
+                        spacing: "sm",
+                        contents: [
+                            {
+                                type: "button",
+                                style: "primary",
+                                color: "#06C755",
+                                action: {
+                                    type: "uri",
+                                    label: "アプリでマップを見る",
+                                    uri: "https://liff.line.me/2009431992-aQfZHA0X"
+                                }
+                            }
+                        ],
+                        flex: 0
+                    }
+                }
+            };
+
+            // 共有先選択画面を呼び出し
+            try {
+                const res = await liff.shareTargetPicker([flexMessage]);
+                if (res) {
+                    Swal.fire({ title: '送信完了', text: 'LINEのトークに送信しました。', icon: 'success', timer: 2000, showConfirmButton: false });
+                }
+            } catch (error) {
+                console.error("Share target picker failed", error);
+                Swal.fire({ title: 'エラー', text: '送信をキャンセルしたか、エラーが発生しました。', icon: 'warning', confirmButtonColor: '#06C755' });
+            }
+        }
+        
         async function main() { 
             try { 
                 if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') { initMap(); } 
