@@ -276,7 +276,7 @@
         function initModalMap(lat, lng) {
             document.getElementById('modal-map-container').style.display = 'block'; const pos = { lat: lat, lng: lng };
             if (!modalMap) {
-                modalMap = new google.maps.Map(document.getElementById("modal-map"), { center: pos, zoom: 16, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, gestureHandling: "greedy" });
+                modalMap = new google.maps.Map(document.getElementById("modal-map"), { center: pos, zoom: 17, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, gestureHandling: "greedy" });
                 modalMap.addListener('dragend', () => {
                     const center = modalMap.getCenter(); currentLat = center.lat(); currentLng = center.lng();
                     const statusText = document.getElementById('gps-status'); statusText.innerText = "✍️ 手動で場所を設定中"; statusText.style.color = "#FF9800";
