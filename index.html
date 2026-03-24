@@ -185,7 +185,7 @@
             try {
                 let uploadedUrls = [];
                 for (let i = 0; i < files.length; i++) {
-                    let blob = await compressImageToBlob(files[i], 1024, 1024, 0.75);
+                    let blob = await compressImageToBlob(files[i], 800, 800, 0.8);
                     let filename = `append_${Date.now()}_${i}.jpg`;
                     let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
                     await storageRef.put(blob);
@@ -330,7 +330,7 @@
                 let uploadedUrls = [];
                 // Firebaseへ直接画像を送信！
                 for (let i = 0; i < stagingFiles.length; i++) {
-                    let blob = await compressImageToBlob(stagingFiles[i], 1024, 1024, 0.75);
+                    let blob = await compressImageToBlob(stagingFiles[i], 800, 800, 0.8);
                     let filename = `liff_${Date.now()}_${i}.jpg`;
                     let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
                     await storageRef.put(blob);
