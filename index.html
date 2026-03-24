@@ -522,7 +522,8 @@
                     }
                 } else { textToShow = typeOrText; }
 
-                let cardHtml = `<div class="memory-card" id="card-${timeId}">`;
+                let cardHtml = `<div class="memory-card" id="card-${timeId}" onclick="if(typeof toggleCardSelection === 'function') toggleCardSelection('${date}', '${timeId}')">`;
+                cardHtml += `<input type="checkbox" id="cb-${timeId}" class="select-checkbox">`;
                 cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete">🗑️ まるごと削除</button>`;
                 if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`;
                 if (textToShow) {
