@@ -70,6 +70,17 @@
         .swal2-html-container { font-size: 0.9rem !important; }
         .memory-text.collapsed { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }
         .read-more-btn { color: #06C755; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-bottom: 15px; display: inline-block; }
+        /* ▼▼▼ 複数選択モード用のスタイル ▼▼▼ */
+        .select-checkbox { display: none; position: absolute; top: 15px; left: 15px; width: 24px; height: 24px; z-index: 5; cursor: pointer; accent-color: #06C755; }
+        .selection-mode .select-checkbox { display: block; pointer-events: none; }
+        .selection-mode .memory-card { padding-left: 50px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
+        .selection-mode .memory-card.selected { border: 2px solid #06C755; background-color: #f0fdf4; }
+        .selection-mode .btn-container, .selection-mode .btn-delete { pointer-events: none; opacity: 0.3; }
+        
+        #mode-toggle-btn { position: absolute; top: 15px; right: 15px; z-index: 20; background: white; color: #555; border: 1px solid #ccc; padding: 8px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        #mode-toggle-btn.active { background: #06C755; color: white; border-color: #06C755; }
+        
+        #send-multiple-fab { display: none; position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background-color: #06C755; color: white; padding: 14px 28px; border-radius: 30px; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(6, 199, 85, 0.4); z-index: 1000; cursor: pointer; white-space: nowrap; transition: 0.2s; }
     </style>
 </head>
 <body>
