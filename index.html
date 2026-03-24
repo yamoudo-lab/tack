@@ -241,16 +241,35 @@
             });
             if (!result.isConfirmed) return;
 
-            const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; closeLightbox(); showLoading("Deleting..."); 
+            const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; 
+            closeLightbox(); 
+            
+            // ▼▼▼ 魔法：画面上のサムネイルから対象の写真だけを即座に消す ▼▼▼
+            const timeId = new Date(currentLbDate).getTime();
+            const cardElement = document.getElementById('card-' + timeId);
+            if (cardElement) {
+                const images = cardElement.querySelectorAll('img.thumb-img');
+                images.forEach(img => {
+                    if (img.src === targetUrl) {
+                        img.style.display = "none"; 
+                    }
+                });
+            }
+
+            Swal.fire({ title: '削除しました', icon: 'success', timer: 1500, showConfirmButton: false });
+
+            // ▼▼▼ 裏側でゆっくり削除処理 ▼▼▼
             try {
                 const payload = { userId: currentUserId, action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
-                await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                
-                await Swal.fire({ title: '完了', text: '写真を削除しました。', icon: 'success', confirmButtonColor: '#06C755' });
-                document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); initMap(); fetchData(); 
+                fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+                    .then(() => fetch(GAS_URL + "?userId=" + currentUserId)) // 裏で最新データを取得
+                    .then(res => res.json())
+                    .then(freshData => {
+                        localStorage.setItem("memoryMapCache_" + currentUserId, JSON.stringify(freshData));
+                        renderData(freshData); // こっそり正式な状態に更新
+                    });
             } catch (error) { 
-                Swal.fire({ title: 'エラー', text: '削除エラー: ' + error, icon: 'error', confirmButtonColor: '#06C755' });
-                hideLoading(); 
+                console.error("Delete Error", error);
             }
         }
 
