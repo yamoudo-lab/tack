@@ -183,15 +183,14 @@
             }
             showLoading("Uploading to Firebase..."); 
             try {
-                let uploadedUrls = [];
-                for (let i = 0; i < files.length; i++) {
-                    let blob = await compressImageToBlob(files[i], 800, 800, 0.8);
-                    let filename = `append_${Date.now()}_${i}.jpg`;
-                    let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
-                    await storageRef.put(blob);
-                    let downloadUrl = await storageRef.getDownloadURL();
-                    uploadedUrls.push(downloadUrl); // GASには生成されたURLだけを送る
-                }
+                const uploadPromises = stagingFiles.map(async (file, i) => {
+                let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
+                let filename = `liff_${Date.now()}_${i}.jpg`;
+                let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
+                await storageRef.put(blob);
+                return await storageRef.getDownloadURL();
+            });
+            let uploadedUrls = await Promise.all(uploadPromises);
                 const payload = { userId: currentUserId, action: "appendImage", date: currentAppendDate, images: uploadedUrls };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
