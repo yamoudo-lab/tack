@@ -148,7 +148,7 @@
             const card = document.getElementById('card-' + new Date(dateStr).getTime());
             if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); if (map && lat && lng) map.panTo({lat: parseFloat(lat), lng: parseFloat(lng)}); }
         }
-        function focusMap(lat, lng) { if (map && lat && lng) { map.panTo({lat: parseFloat(lat), lng: parseFloat(lng)}); map.setZoom(14); } }
+        function focusMap(lat, lng) { if (map && lat && lng) { map.panTo({lat: parseFloat(lat), lng: parseFloat(lng)}); map.setZoom(16); } }
 
         function triggerAppendPhoto(dateStr) { 
             currentAppendDate = dateStr; 
