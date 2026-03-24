@@ -70,6 +70,7 @@
         .swal2-html-container { font-size: 0.9rem !important; }
         .memory-text.collapsed { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }
         .read-more-btn { color: #06C755; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-bottom: 15px; display: inline-block; }
+        
         /* ▼▼▼ 複数選択モード用のスタイル ▼▼▼ */
         .select-checkbox { display: none; position: absolute; top: 15px; left: 15px; width: 24px; height: 24px; z-index: 5; cursor: pointer; accent-color: #06C755; }
         .selection-mode .select-checkbox { display: block; pointer-events: none; }
@@ -77,39 +78,29 @@
         .selection-mode .memory-card.selected { border: 2px solid #06C755; background-color: #f0fdf4; }
         .selection-mode .btn-container, .selection-mode .btn-delete { pointer-events: none; opacity: 0.3; }
         
-        /* mode-toggle-btn のスタイルをこれに差し替え */
         #mode-toggle-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px; /* 右端から15px */
-            z-index: 100; /* タイトルバーより前面に出す */
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(5px);
-            color: #06C755;
-            border: 1px solid #06C755;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: absolute; top: 15px; right: 15px; z-index: 100; background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px); color: #06C755; border: 1px solid #06C755; padding: 8px 15px;
+            border-radius: 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-
-        #mode-toggle-btn.active {
-            background: #06C755;
-            color: white;
-        }
-        
+        #mode-toggle-btn.active { background: #06C755; color: white; }
         #send-multiple-fab { display: none; position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background-color: #06C755; color: white; padding: 14px 28px; border-radius: 30px; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(6, 199, 85, 0.4); z-index: 1000; cursor: pointer; white-space: nowrap; transition: 0.2s; }
     </style>
 </head>
 <body>
-    <div id="map-section"><div id="header-pill"><h1>Memory Map</h1></div><div id="map"></div></div>
+    <div id="map-section">
+        <div id="header-pill"><h1>Memory Map</h1></div>
+        <button id="mode-toggle-btn" onclick="toggleSelectionMode()">☑️ 複数選択</button>
+        <div id="map"></div>
+    </div>
+    
     <div id="list-section">
         <div id="loading"><span class="spinner"></span> Loading data...</div>
         <div id="memory-list"></div>
     </div>
+    
     <div class="fab-container"><div class="fab-main" onclick="document.getElementById('main-trigger').click()">＋</div></div>
+    <div id="send-multiple-fab" onclick="shareSelectedMemories()">📤 0件をLINEで送る</div>
 
     <input type="file" id="main-trigger" accept="image/*" capture="environment" onchange="handleDirectFiles(event)" style="display: none;">
     <input type="file" id="add-more-trigger" accept="image/*" multiple onchange="handleDirectFiles(event)" style="display: none;">
@@ -140,14 +131,6 @@
         </div>
     </div>
 
-    <div id="map-section">
-        <div id="header-pill"><h1>Memory Map</h1></div>
-        <button id="mode-toggle-btn" onclick="toggleSelectionMode()">☑️ 複数選択</button>
-        <div id="map"></div>
-    </div>
-
-    <div id="send-multiple-fab" onclick="shareSelectedMemories()">📤 0件をLINEで送る</div>
-    
     <script>
         // ▼▼▼ Firebaseの初期設定 ▼▼▼
         const firebaseConfig = {
@@ -160,7 +143,6 @@
         };
         firebase.initializeApp(firebaseConfig);
         const storage = firebase.storage();
-        // ▲▲▲ Firebaseの初期設定 終了 ▲▲▲
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxS4N8TrRihDFQJnNMjbiKYUTtCEIkX0rBqTpbxVkzUBidv-CcSi-Ym-TU9EtfPxY18/exec";
         
@@ -170,6 +152,10 @@
 
         window.galleryData = {}; window.memoData = {};
         let currentLbDate = ""; let currentLbIndex = 0; let currentEditDate = ""; let currentAppendDate = "";
+        
+        // ▼ 複数選択用の変数
+        let isSelectionMode = false;
+        let selectedMemories = [];
 
         function showLoading(text) { document.getElementById('loading').style.display = 'flex'; document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`; }
         function hideLoading() { document.getElementById('loading').style.display = 'none'; }
@@ -195,7 +181,6 @@
             document.getElementById('append-photo-trigger').click(); 
         }
 
-        // ▼▼ 画像をBlob（ファイルデータ）に変換する関数（Firebase用）▼▼
         function compressImageToBlob(file, maxWidth, maxHeight, quality) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -206,7 +191,6 @@
                     } else { if (height > maxHeight) { width = Math.round(width * (maxHeight / height)); height = maxHeight; } }
                     const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-                    // ここがFirebase用にBlobを返すように進化！
                     canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', quality);
                 };
                 img.onerror = error => reject(error);
@@ -223,14 +207,14 @@
             }
             showLoading("Uploading to Firebase..."); 
             try {
-                const uploadPromises = stagingFiles.map(async (file, i) => {
-                let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
-                let filename = `liff_${Date.now()}_${i}.jpg`;
-                let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
-                await storageRef.put(blob);
-                return await storageRef.getDownloadURL();
-            });
-            let uploadedUrls = await Promise.all(uploadPromises);
+                const uploadPromises = files.map(async (file, i) => {
+                    let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
+                    let filename = `append_${Date.now()}_${i}.jpg`;
+                    let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
+                    await storageRef.put(blob);
+                    return await storageRef.getDownloadURL();
+                });
+                let uploadedUrls = await Promise.all(uploadPromises);
                 const payload = { userId: currentUserId, action: "appendImage", date: currentAppendDate, images: uploadedUrls };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
@@ -268,7 +252,6 @@
         }
         function updateLightbox() {
             const urls = window.galleryData[currentLbDate]; 
-            // ドライブの小細工はもう不要。FirebaseのURLをそのまま使う。
             document.getElementById('lb-img').src = urls[currentLbIndex]; 
             document.getElementById('lb-counter').innerText = `${currentLbIndex + 1} / ${urls.length}`;
             const navs = document.querySelectorAll('.lb-nav'); navs.forEach(nav => nav.style.display = urls.length > 1 ? 'block' : 'none');
@@ -284,29 +267,25 @@
             const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; 
             closeLightbox(); 
             
-            // ▼▼▼ 魔法：画面上のサムネイルから対象の写真だけを即座に消す ▼▼▼
             const timeId = new Date(currentLbDate).getTime();
             const cardElement = document.getElementById('card-' + timeId);
             if (cardElement) {
                 const images = cardElement.querySelectorAll('img.thumb-img');
                 images.forEach(img => {
-                    if (img.src === targetUrl) {
-                        img.style.display = "none"; 
-                    }
+                    if (img.src === targetUrl) { img.style.display = "none"; }
                 });
             }
 
             Swal.fire({ title: '削除しました', icon: 'success', timer: 1500, showConfirmButton: false });
 
-            // ▼▼▼ 裏側でゆっくり削除処理 ▼▼▼
             try {
                 const payload = { userId: currentUserId, action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
                 fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-                    .then(() => fetch(GAS_URL + "?userId=" + currentUserId)) // 裏で最新データを取得
+                    .then(() => fetch(GAS_URL + "?userId=" + currentUserId)) 
                     .then(res => res.json())
                     .then(freshData => {
                         localStorage.setItem("memoryMapCache_" + currentUserId, JSON.stringify(freshData));
-                        renderData(freshData); // こっそり正式な状態に更新
+                        renderData(freshData); 
                     });
             } catch (error) { 
                 console.error("Delete Error", error);
@@ -386,7 +365,6 @@
             try {
                 const memoText = document.getElementById('memo-input').value; const gpsText = `${currentLat},${currentLng}`;
                 
-                // 1. Firebaseへのアップロード（ここだけは数秒待つ）
                 const uploadPromises = stagingFiles.map(async (file, i) => {
                     let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
                     let filename = `liff_${Date.now()}_${i}.jpg`;
@@ -398,20 +376,16 @@
 
                 const payload = { userId: currentUserId, source: "liff", memo: memoText, gps: gpsText, images: uploadedUrls };
 
-                // ▼▼▼ 魔法の始まり：GASへの通信は「裏側」にぶん投げて、返事を待たない！ ▼▼▼
                 fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-                    .then(() => fetch(GAS_URL + "?userId=" + currentUserId)) // POSTが終わったら裏で最新情報を取得
+                    .then(() => fetch(GAS_URL + "?userId=" + currentUserId)) 
                     .then(res => res.json())
                     .then(freshData => {
-                        // 最新データが取れたら、ひっそりと画面を正式なカードに書き換える
                         localStorage.setItem("memoryMapCache_" + currentUserId, JSON.stringify(freshData));
                         renderData(freshData);
                     });
 
-                // ▼▼▼ 通信を待たずに、入力画面を速攻で閉じる！ ▼▼▼
                 closeModal();
                 
-                // ▼▼▼ 今送信した内容で「仮のカード」を作って、一番上にねじ込む！ ▼▼▼
                 let tempCardHtml = `<div class="memory-card" style="border: 2px dashed #06C755; background: #f0fdf4;">`;
                 tempCardHtml += `<div class="memory-date" style="color:#06C755;">⏳ ただいまマップに反映中...</div>`;
                 if (memoText) tempCardHtml += `<div class="memory-text">${memoText}</div>`;
@@ -425,7 +399,6 @@
                 tempCardHtml += `</div>`;
                 document.getElementById('memory-list').insertAdjacentHTML('afterbegin', tempCardHtml);
 
-                // ▼▼▼ 完了メッセージも2秒でサクッと消す ▼▼▼
                 Swal.fire({ 
                     title: '送信完了！', 
                     text: 'マップへの反映は裏側で行われます。', 
@@ -448,7 +421,6 @@
             });
             if (!result.isConfirmed) return;
 
-            // ▼▼▼ 魔法：画面から一瞬でカードを消し去る ▼▼▼
             const timeId = new Date(dateStr).getTime();
             const cardElement = document.getElementById('card-' + timeId);
             if (cardElement) {
@@ -460,15 +432,14 @@
 
             Swal.fire({ title: '削除しました', icon: 'success', timer: 1500, showConfirmButton: false });
 
-            // ▼▼▼ GASへの削除命令は裏側にぶん投げる ▼▼▼
             try {
                 const payload = { userId: currentUserId, action: "delete", date: dateStr };
                 fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-                    .then(() => fetch(GAS_URL + "?userId=" + currentUserId)) // 裏で最新データを取得
+                    .then(() => fetch(GAS_URL + "?userId=" + currentUserId))
                     .then(res => res.json())
                     .then(freshData => {
                         localStorage.setItem("memoryMapCache_" + currentUserId, JSON.stringify(freshData));
-                        renderData(freshData); // こっそり正式な状態に更新
+                        renderData(freshData); 
                     });
             } catch (error) { 
                 console.error("Delete Error", error);
@@ -521,7 +492,6 @@
                 const timeId = new Date(date).getTime();
                 let textToShow = ""; let originalUrls = []; 
 
-                // FirebaseのURLがそのまま入っている
                 if (colD && colD.startsWith("http")) {
                     originalUrls = colD.split(",");
                 }
@@ -543,9 +513,11 @@
                     }
                 } else { textToShow = typeOrText; }
 
-                let cardHtml = `<div class="memory-card" id="card-${timeId}" onclick="if(typeof toggleCardSelection === 'function') toggleCardSelection('${date}', '${timeId}')">`;
-                cardHtml += `<input type="checkbox" id="cb-${timeId}" class="select-checkbox">`;
+                // ▼▼▼ カードに複数選択用の仕掛け（onclickとcheckbox）を組み込み済み ▼▼▼
+                let cardHtml = `<div class="memory-card" id="card-${timeId}" onclick="if(isSelectionMode) toggleCardSelection('${date}', '${timeId}')">`;
+                cardHtml += `<input type="checkbox" id="cb-${timeId}" class="select-checkbox" style="display:none;">`;
                 cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete">🗑️ まるごと削除</button>`;
+                
                 if (date) cardHtml += `<div class="memory-date">🕒 ${new Date(date).toLocaleString('ja-JP')}</div>`;
                 if (textToShow) {
                     if (textToShow.length > 80 || (textToShow.match(/\n/g) || []).length >= 3) {
@@ -559,7 +531,6 @@
                 if (originalUrls.length > 0) {
                     cardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
                     for(let j=0; j<originalUrls.length; j++) {
-                        // FirebaseのURLをそのまま使う！
                         cardHtml += `<img src="${originalUrls[j]}" class="thumb-img" onclick="openLightbox('${date}', ${j})">`;
                     }
                     cardHtml += `</div>`;
@@ -586,10 +557,7 @@
             }, 300); 
         });
 
-        async function shareMemory(dateStr) {
-            let isSelectionMode = false;
-        let selectedMemories = [];
-
+        // ▼▼▼ 複数選択モード用の関数群（正しく外に出したぞ） ▼▼▼
         function toggleSelectionMode() {
             isSelectionMode = !isSelectionMode;
             const btn = document.getElementById('mode-toggle-btn');
@@ -650,21 +618,18 @@
                 return;
             }
 
-            // 次のフェーズで使う「選択したピンだけのマップを開く」ための特殊なURLパラメータを仕込む
             const timeIds = selectedMemories.map(d => new Date(d).getTime()).join(',');
             const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${timeIds}`;
 
-            // 選択されたデータから、カルーセル用のカード（Bubble）の配列を錬成する
             const bubbles = selectedMemories.map(dateStr => {
                 const urls = window.galleryData[dateStr];
                 const rawMemo = window.memoData[dateStr] || "";
-                // メモが長すぎるとLINE側でエラーになるため切り詰める
                 const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "Memory Map スポット");
                 const imageUrl = (urls && urls.length > 0) ? urls[0] : "https://koransha.com/images/noimage.png"; 
 
                 return {
                     type: "bubble",
-                    size: "micro", // 横並びに適したコンパクトサイズ
+                    size: "micro", 
                     hero: { type: "image", url: imageUrl, size: "full", aspectRatio: "4:3", aspectMode: "cover" },
                     body: {
                         type: "box", layout: "vertical", paddingAll: "10px",
@@ -680,69 +645,56 @@
             const flexMessage = {
                 type: "flex",
                 altText: `${selectedMemories.length}件のおすすめスポットが届きました`,
-                contents: {
-                    type: "carousel", // ここでカルーセル（横スワイプ）を指定
-                    contents: bubbles
-                }
+                contents: { type: "carousel", contents: bubbles }
             };
 
             try {
                 const res = await liff.shareTargetPicker([flexMessage]);
                 if (res) {
                     Swal.fire({ title: '送信完了', text: 'リストを共有しました。', icon: 'success', timer: 2000, showConfirmButton: false });
-                    toggleSelectionMode(); // 送信後は元の画面に戻す
+                    toggleSelectionMode(); 
                 }
             } catch (error) {
                 console.error("Share target picker failed", error);
             }
         }
-            // LIFF環境でShare Target Pickerが使えるかチェック
+
+        // ▼▼▼ 単体送信用の関数（元通りに独立させたぞ） ▼▼▼
+        async function shareMemory(dateStr) {
             if (!liff.isApiAvailable('shareTargetPicker')) {
                 Swal.fire({ title: 'エラー', text: 'この環境では共有機能が使えません。', icon: 'error', confirmButtonColor: '#06C755' });
                 return;
             }
 
-            // 送信するデータを準備
             const urls = window.galleryData[dateStr];
             const memoText = window.memoData[dateStr] || "Memory Mapからの共有";
-            // 画像があれば1枚目を使用、なければデフォルトのダミー画像
             const imageUrl = (urls && urls.length > 0) ? urls[0] : "https://koransha.com/images/noimage.png"; 
 
-            // LINEに送るリッチカード（Flex Message）の設計図
+            // ここでもフィルター用のURLを仕込んでおく（1件だけだが、専用モードで開かせるため）
+            const timeId = new Date(dateStr).getTime();
+            const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${timeId}`;
+
             const flexMessage = {
                 type: "flex",
                 altText: "Memory Mapから写真が届きました",
                 contents: {
                     type: "bubble",
                     hero: {
-                        type: "image",
-                        url: imageUrl,
-                        size: "full",
-                        aspectRatio: "20:13",
-                        aspectMode: "cover"
+                        type: "image", url: imageUrl, size: "full", aspectRatio: "20:13", aspectMode: "cover"
                     },
                     body: {
-                        type: "box",
-                        layout: "vertical",
+                        type: "box", layout: "vertical",
                         contents: [
                             { type: "text", text: "Memory Map", weight: "bold", color: "#06C755", size: "sm" },
                             { type: "text", text: memoText, weight: "bold", size: "lg", margin: "md", wrap: true }
                         ]
                     },
                     footer: {
-                        type: "box",
-                        layout: "vertical",
-                        spacing: "sm",
+                        type: "box", layout: "vertical", spacing: "sm",
                         contents: [
                             {
-                                type: "button",
-                                style: "primary",
-                                color: "#06C755",
-                                action: {
-                                    type: "uri",
-                                    label: "アプリでマップを見る",
-                                    uri: "https://liff.line.me/2009431992-aQfZHA0X"
-                                }
+                                type: "button", style: "primary", color: "#06C755",
+                                action: { type: "uri", label: "アプリでマップを見る", uri: shareUrl }
                             }
                         ],
                         flex: 0
@@ -750,7 +702,6 @@
                 }
             };
 
-            // 共有先選択画面を呼び出し
             try {
                 const res = await liff.shareTargetPicker([flexMessage]);
                 if (res) {
