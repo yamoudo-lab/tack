@@ -432,7 +432,7 @@
             });
             if (stagingFiles.length < 5) {
                 const addBox = document.createElement('div'); addBox.className = 'add-more-box';
-                addBox.onclick = function() { document.getElementById('add-more-trigger').click(); }; addBox.innerHTML = `<span>＋</span><p>追加</p>`; grid.appendChild(addBox);
+                addBox.onclick = function() { triggerFileInput('add-more-trigger'); }; addBox.innerHTML = `<span>＋</span><p>追加</p>`; grid.appendChild(addBox);
             }
         }
 
