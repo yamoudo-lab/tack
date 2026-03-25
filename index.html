@@ -220,7 +220,6 @@
             });
         }
 
-        // ▼▼▼ 写真追加の爆速化（楽観的UI） ▼▼▼
         async function handleAppendPhotos(event) {
             const files = Array.from(event.target.files);
             if (files.length === 0) return;
@@ -401,14 +400,7 @@
 
         function removeFile(index) { stagingFiles.splice(index, 1); renderPreviews(); }
 
-        async function submitData() {
-            if (modalMap) { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); }
-            if (!currentLat || !currentLng) { 
-                Swal.fire({ title: '注意', text: '場所が決定されていません。', icon: 'warning', confirmButtonColor: '#06C755' });
-                return; 
-            }
-
-            // ▼▼▼ 他人のピンを自分のマップにコピーする魔法 ▼▼▼
+        // ▼▼▼ 修正：独立した正しい関数としてここに配置！ ▼▼▼
         async function importMemory(dateStr, latStr, lngStr) {
             const result = await Swal.fire({
                 title: '自分のマップに保存', 
@@ -420,16 +412,14 @@
 
             showLoading("インポート中...");
             try {
-                // Aのデータをコピーする
                 const memoText = window.memoData[dateStr] || "";
                 const gpsText = (latStr && lngStr) ? `${latStr},${lngStr}` : "";
                 const imageUrls = window.galleryData[dateStr] || [];
 
-                // 宛先を「B自身（currentUserId）」にして送信！
                 const payload = { 
                     userId: currentUserId, 
                     source: "liff", 
-                    memo: "【共有マップから保存】\n" + memoText, // どこから保存したか分かるようにする
+                    memo: "【共有マップから保存】\n" + memoText, 
                     gps: gpsText, 
                     images: imageUrls 
                 };
@@ -444,7 +434,14 @@
                 hideLoading();
             }
         }
-            
+
+        async function submitData() {
+            if (modalMap) { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); }
+            if (!currentLat || !currentLng) { 
+                Swal.fire({ title: '注意', text: '場所が決定されていません。', icon: 'warning', confirmButtonColor: '#06C755' });
+                return; 
+            }
+
             const btn = document.querySelector('#input-modal .btn-submit'); 
             btn.innerText = "Uploading..."; btn.disabled = true; 
             
@@ -496,7 +493,7 @@
             } catch (error) { 
                 Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' });
             } finally {
-                btn.innerText = "🚀 送信する"; btn.disabled = false;
+                btn.innerText = "送信する"; btn.disabled = false;
             }
         }
 
@@ -637,7 +634,7 @@
                 cardHtml += `<div class="btn-container">`;
                 if (latStr && lngStr) {
                     cardHtml += `<button onclick="focusMap(${latStr}, ${lngStr})" class="btn btn-map"><span class="material-symbols-outlined">place</span>マップ</button>`;
-                    cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=$${latStr},${lngStr}" target="_blank" class="btn btn-nav"><span class="material-symbols-outlined">directions_car</span>ナビ開始</a>`;
+                    cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=${latStr},${lngStr}" target="_blank" class="btn btn-nav"><span class="material-symbols-outlined">directions_car</span>ナビ開始</a>`;
                 }
                 
                 if (!isSharedMode) {
@@ -645,7 +642,6 @@
                     cardHtml += `<button onclick="triggerAppendPhoto('${date}')" class="btn btn-photo"><span class="material-symbols-outlined">add_a_photo</span>写真追加</button>`;
                     cardHtml += `<button onclick="shareMemory('${date}')" class="btn btn-share">LINEで送る</button>`;
                 } else {
-                    // ▼▼▼ ゲストモード（共有された側）の時だけ、インポートボタンを出す！ ▼▼▼
                     cardHtml += `<button onclick="importMemory('${date}', '${latStr}', '${lngStr}')" class="btn" style="background-color: #FFF3E0; color: #E65100; border-color: #FFCC80;"><span class="material-symbols-outlined">download</span>自分のマップに保存</button>`;
                 }
                 
@@ -707,12 +703,12 @@
         function updateSendFab() {
             const sendFab = document.getElementById('send-multiple-fab');
             if (selectedMemories.length > 0) {
-                sendFab.innerText = ` ${selectedMemories.length}件をLINEで送る`;
+                sendFab.innerText = `📤 ${selectedMemories.length}件をLINEで送る`;
                 sendFab.style.backgroundColor = "#06C755";
                 sendFab.style.pointerEvents = "auto";
                 sendFab.style.transform = "translateX(-50%) scale(1.05)";
             } else {
-                sendFab.innerText = ` スポットを選択...`;
+                sendFab.innerText = `📤 スポットを選択...`;
                 sendFab.style.backgroundColor = "#9e9e9e"; 
                 sendFab.style.pointerEvents = "none";
                 sendFab.style.transform = "translateX(-50%) scale(1.0)";
@@ -845,10 +841,10 @@
                         
                         // ▼▼▼ 右上のボタンを「自分のマップへ」という強力な導線に書き換える ▼▼▼
                         modeBtn.innerHTML = `<span class="material-symbols-outlined">home</span>自分のマップへ`;
-                        modeBtn.style.backgroundColor = "#06C755"; /* LINEグリーンで目立たせる */
+                        modeBtn.style.backgroundColor = "#06C755"; 
                         modeBtn.style.color = "white";
                         modeBtn.style.borderColor = "#06C755";
-                        modeBtn.style.pointerEvents = "auto"; /* クリック可能にする */
+                        modeBtn.style.pointerEvents = "auto"; 
                         
                         // ボタンを押したら、共有パラメータ（uid等）の無い「素のTACK」へ強制ワープ！
                         modeBtn.onclick = function() {
