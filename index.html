@@ -185,6 +185,16 @@
 
         function showLoading(text) { document.getElementById('loading').style.display = 'flex'; document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`; }
         function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+
+        // ▼▼▼ OSの「ファイルを選んだ記憶」を破壊してリセットする魔法 ▼▼▼
+        function triggerFileInput(id) {
+            let oldInput = document.getElementById(id);
+            let newInput = oldInput.cloneNode(true); // タグをコピー
+            newInput.value = ''; // 記憶をリセット
+            newInput.onchange = oldInput.onchange; // 処理を引き継ぎ
+            oldInput.parentNode.replaceChild(newInput, oldInput); // 古いものを捨てて入れ替え
+            newInput.click(); // クリック発火
+        }
         
         function toggleMemo(id) {
             const textDiv = document.getElementById(`memo-${id}`);
