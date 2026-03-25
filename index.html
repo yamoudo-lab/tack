@@ -524,7 +524,13 @@
             let hasPins = false;
             
             window.galleryData = {}; window.memoData = {};
-            initMap(); 
+            
+            // ▼▼▼ 地図が無い時だけ作り、ある時はピンだけ消す ▼▼▼
+            if (!map) { initMap(); }
+            bounds = new google.maps.LatLngBounds();
+            markers.forEach(marker => marker.setMap(null)); // 古いピンを消去
+            markers = []; // リストを空にする
+            // ▲▲▲ ここまで ▲▲▲
 
             for (let i = data.length - 1; i > 0; i--) {
                 const row = data[i]; const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || "";
