@@ -383,6 +383,29 @@
             currentLat = null; currentLng = null; stagingFiles = []; renderPreviews();
         }
 
+        // ▼▼▼ ＋ボタンを押したときの選択メニュー ▼▼▼
+        function openAddMenu() {
+            Swal.fire({
+                title: '記録の追加',
+                text: 'らくらくフォン等でカメラが落ちる場合は「アルバムから」を選んでください。',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: '📸 カメラで撮る',
+                denyButtonText: '🖼 アルバムから',
+                cancelButtonText: 'やめる',
+                confirmButtonColor: '#06C755',
+                denyButtonColor: '#FF9800'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // カメラを直接起動（俺のスマホ用）
+                    document.getElementById('main-trigger').click();
+                } else if (result.isDenied) {
+                    // アルバムを開く（お母様のらくらくフォン用）
+                    document.getElementById('add-more-trigger').click();
+                }
+            });
+        }
+
         function renderPreviews() {
             const grid = document.getElementById('preview-grid'); grid.innerHTML = ''; 
             stagingFiles.forEach((file, index) => {
