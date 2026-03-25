@@ -668,12 +668,12 @@
         function updateSendFab() {
             const sendFab = document.getElementById('send-multiple-fab');
             if (selectedMemories.length > 0) {
-                sendFab.innerText = `📤 ${selectedMemories.length}件をLINEで送る`;
+                sendFab.innerText = ` ${selectedMemories.length}件をLINEで送る`;
                 sendFab.style.backgroundColor = "#06C755";
                 sendFab.style.pointerEvents = "auto";
                 sendFab.style.transform = "translateX(-50%) scale(1.05)";
             } else {
-                sendFab.innerText = `📤 スポットを選択...`;
+                sendFab.innerText = ` スポットを選択...`;
                 sendFab.style.backgroundColor = "#9e9e9e"; 
                 sendFab.style.pointerEvents = "none";
                 sendFab.style.transform = "translateX(-50%) scale(1.0)";
