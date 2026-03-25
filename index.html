@@ -165,7 +165,7 @@
         
         let map; let bounds; let currentLat = null; let currentLng = null;
         let stagingFiles = []; let modalMap = null; 
-        let markers = []; // ▼ マップのチラつき防止用
+        let markers = []; 
         
         let currentUserId = ""; 
         let targetUserId = "";  
@@ -532,7 +532,6 @@
             
             window.galleryData = {}; window.memoData = {};
             
-            // ▼▼▼ マップのチラつき解消：地図は作り直さず、ピンだけを消して再利用する ▼▼▼
             if (!map) { initMap(); }
             bounds = new google.maps.LatLngBounds();
             markers.forEach(marker => marker.setMap(null));
@@ -566,7 +565,7 @@
                             const position = { lat: parseFloat(latStr), lng: parseFloat(lngStr) };
                             const marker = new google.maps.Marker({ position: position, map: map, title: colC });
                             marker.addListener("click", () => { jumpToCard(date, latStr, lngStr); });
-                            markers.push(marker); // 新しいピンを配列に保存
+                            markers.push(marker); 
                             bounds.extend(position); hasPins = true;
                         }
                     }
@@ -576,11 +575,10 @@
                 
                 if (!isSharedMode) {
                     cardHtml += `<input type="checkbox" id="cb-${timeId}" class="select-checkbox" style="display:none;">`;
-                    // ▼ 削除ボタン
                     cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete"><span class="material-symbols-outlined">delete</span>まるごと削除</button>`;
                 }
                 
-                if (date) cardHtml += `<div class="memory-date"> ${new Date(date).toLocaleString('ja-JP')}</div>`;
+                if (date) cardHtml += `<div class="memory-date">${new Date(date).toLocaleString('ja-JP')}</div>`;
                 if (textToShow) {
                     if (textToShow.length > 80 || (textToShow.match(/\n/g) || []).length >= 3) {
                         cardHtml += `<div class="memory-text collapsed" id="memo-${timeId}">${textToShow}</div>`;
@@ -598,10 +596,10 @@
                     cardHtml += `</div>`;
                 }
 
-                // ▼ シンプルになったボタン群（ナビのURLも修正済み！） ▼
                 cardHtml += `<div class="btn-container">`;
                 if (latStr && lngStr) {
                     cardHtml += `<button onclick="focusMap(${latStr}, ${lngStr})" class="btn btn-map"><span class="material-symbols-outlined">place</span>マップ</button>`;
+                    // ▼▼ ナビのURLを世界標準の正しいものに修正済み ▼▼
                     cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=${latStr},${lngStr}" target="_blank" class="btn btn-nav"><span class="material-symbols-outlined">directions_car</span>ナビ開始</a>`;
                 }
                 
@@ -611,7 +609,7 @@
                     cardHtml += `<button onclick="shareMemory('${date}')" class="btn btn-share">LINEで送る</button>`;
                 }
                 
-                cardHtml += `</div></div>`;
+                cardHtml += `</div></div>`; // ←★★★ ここが復活した！ ★★★
                 
                 listContainer.innerHTML += cardHtml;
             }
@@ -669,12 +667,12 @@
         function updateSendFab() {
             const sendFab = document.getElementById('send-multiple-fab');
             if (selectedMemories.length > 0) {
-                sendFab.innerText = ` ${selectedMemories.length}件をLINEで送る`;
+                sendFab.innerText = `📤 ${selectedMemories.length}件をLINEで送る`;
                 sendFab.style.backgroundColor = "#06C755";
                 sendFab.style.pointerEvents = "auto";
                 sendFab.style.transform = "translateX(-50%) scale(1.05)";
             } else {
-                sendFab.innerText = ` スポットを選択...`;
+                sendFab.innerText = `📤 スポットを選択...`;
                 sendFab.style.backgroundColor = "#9e9e9e"; 
                 sendFab.style.pointerEvents = "none";
                 sendFab.style.transform = "translateX(-50%) scale(1.0)";
@@ -801,7 +799,7 @@
                         filterIds = filterParam.split(',');
                         isSharedMode = true; 
 
-                        // ▼ ゲストモード時は「複数選択」ボタンの見た目を変えて「閲覧専用バッジ」にする
+                        // ▼ ゲストモード時の見た目
                         document.querySelector('.fab-container').style.display = 'none';
                         const modeBtn = document.getElementById('mode-toggle-btn');
                         modeBtn.innerHTML = `<span class="material-symbols-outlined">map</span>共有マップ`;
