@@ -27,7 +27,12 @@
         .memory-date { font-size: 0.8rem; color: #888; margin-bottom: 10px; padding-right: 60px; font-weight: bold;}
         .memory-text { font-size: 1rem; line-height: 1.5; margin-bottom: 15px; white-space: pre-wrap; color: #222;}
         .btn-container { display: flex; gap: 10px; flex-wrap: wrap; }
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; text-decoration: none; font-weight: bold; cursor:pointer;}
+        /* 既存の .btn を少し修正して、gap: 5px; を追加する */
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; text-decoration: none; font-weight: bold; cursor:pointer; gap: 5px; }
+        
+        /* ▼ アイコン自体のサイズを整えるCSSを追加 ▼ */
+        .material-symbols-outlined { font-size: 18px; vertical-align: middle; }
+        .btn-delete { display: inline-flex; align-items: center; gap: 4px; /* ここも追加しておくと削除ボタンが綺麗になる */ }
         .btn-map { background-color: #E8F5E9; color: #2E7D32; border:none; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
         .btn-edit { background-color: #FFF3E0; color: #E65100; border:none; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
         .btn-nav { background-color: #E3F2FD; color: #1565C0; border:none; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
