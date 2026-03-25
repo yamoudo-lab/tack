@@ -665,10 +665,12 @@
                 if (date) cardHtml += `<div class="memory-date">${new Date(date).toLocaleString('ja-JP')}</div>`;
                 if (textToShow) {
                     if (textToShow.length > 80 || (textToShow.match(/\n/g) || []).length >= 3) {
-                        cardHtml += `<div class="memory-text collapsed" id="memo-${timeId}">${textToShow}</div>`;
+                        // ▼ autoLink() で包む！
+                        cardHtml += `<div class="memory-text collapsed" id="memo-${timeId}">${autoLink(textToShow)}</div>`;
                         cardHtml += `<div class="read-more-btn" id="rmbtn-${timeId}" onclick="toggleMemo('${timeId}')">▼ 続きを読む</div>`;
                     } else {
-                        cardHtml += `<div class="memory-text">${textToShow}</div>`;
+                        // ▼ autoLink() で包む！
+                        cardHtml += `<div class="memory-text">${autoLink(textToShow)}</div>`;
                     }
                 }
 
