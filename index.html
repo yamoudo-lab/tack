@@ -608,9 +608,7 @@
                 if (!isSharedMode) {
                     cardHtml += `<button onclick="openEditModal('${date}')" class="btn btn-edit"><span class="material-symbols-outlined">edit_note</span>メモ</button>`;
                     cardHtml += `<button onclick="triggerAppendPhoto('${date}')" class="btn btn-photo"><span class="material-symbols-outlined">add_a_photo</span>写真追加</button>`;
-                    cardHtml += `<button onclick="shareMemory('${date}')" class="btn btn-share"><span class="material-symbols-outlined">send</span>LINEで送る</button>`;
-                }
-                cardHtml += `</div></div>`;
+                    cardHtml += `<button onclick="shareMemory('${date}')" class="btn btn-share">LINEで送る</button>`;
 
                 listContainer.innerHTML += cardHtml;
             }
