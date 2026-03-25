@@ -407,6 +407,43 @@
                 Swal.fire({ title: '注意', text: '場所が決定されていません。', icon: 'warning', confirmButtonColor: '#06C755' });
                 return; 
             }
+
+            // ▼▼▼ 他人のピンを自分のマップにコピーする魔法 ▼▼▼
+        async function importMemory(dateStr, latStr, lngStr) {
+            const result = await Swal.fire({
+                title: '自分のマップに保存', 
+                text: "このスポットを自分のTACKにインポートしますか？", 
+                icon: 'question',
+                showCancelButton: true, confirmButtonColor: '#06C755', confirmButtonText: '保存する'
+            });
+            if (!result.isConfirmed) return;
+
+            showLoading("インポート中...");
+            try {
+                // Aのデータをコピーする
+                const memoText = window.memoData[dateStr] || "";
+                const gpsText = (latStr && lngStr) ? `${latStr},${lngStr}` : "";
+                const imageUrls = window.galleryData[dateStr] || [];
+
+                // 宛先を「B自身（currentUserId）」にして送信！
+                const payload = { 
+                    userId: currentUserId, 
+                    source: "liff", 
+                    memo: "【共有マップから保存】\n" + memoText, // どこから保存したか分かるようにする
+                    gps: gpsText, 
+                    images: imageUrls 
+                };
+
+                await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
+                
+                Swal.fire({ title: 'インポート完了！', text: '自分のマップに追加されました。', icon: 'success', confirmButtonColor: '#06C755' });
+            } catch (error) {
+                console.error("Import Error", error);
+                Swal.fire({ title: 'エラー', text: '保存に失敗しました。', icon: 'error', confirmButtonColor: '#06C755' });
+            } finally {
+                hideLoading();
+            }
+        }
             
             const btn = document.querySelector('#input-modal .btn-submit'); 
             btn.innerText = "Uploading..."; btn.disabled = true; 
