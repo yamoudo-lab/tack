@@ -398,7 +398,16 @@
                 Swal.fire({ title: '注意', text: '最大5枚までです。', icon: 'warning', confirmButtonColor: '#06C755' });
                 stagingFiles = stagingFiles.concat(files.slice(0, 5 - stagingFiles.length));
             } else { stagingFiles = stagingFiles.concat(files); }
-            renderPreviews(); document.getElementById('input-modal').style.display = 'flex'; getGps(); event.target.value = ''; 
+            
+            // ▼ ここからが魔法。低スペック端末のOSに「息継ぎ（0.5秒）」の時間を与える ▼
+            setTimeout(() => {
+                renderPreviews(); 
+                document.getElementById('input-modal').style.display = 'flex'; 
+                getGps(); 
+            }, 500); 
+            // ▲ ここまで ▲
+            
+            event.target.value = ''; 
         }
 
         function closeModal() {
