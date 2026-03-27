@@ -958,6 +958,8 @@
                     currentUserId = profile.userId;
                     targetUserId = currentUserId; 
 
+                    await checkPremiumStatus(currentUserId);
+
                     const urlParams = new URLSearchParams(window.location.search);
                     const uidParam = urlParams.get('uid');
                     const filterParam = urlParams.get('filter');
