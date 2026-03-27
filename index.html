@@ -285,9 +285,10 @@
                         // ▼ LINEのユーザーID（currentUserId）を持たせてバックエンドを呼び出す ▼
                         const response = await createCheckoutSession({ userId: currentUserId });
                         window.location.href = response.data.url;
-                    } catch (error) {
+                   } catch (error) {
                         hideLoading();
-                        Swal.fire({ title: 'エラー', text: '決済画面の準備に失敗しました。時間をおいて再試行してください。', icon: 'error', confirmButtonColor: '#06C755' });
+                        // ▼ エラーの真の理由を画面に直接表示させる ▼
+                        Swal.fire({ title: 'エラー解析中', text: '詳細: ' + error.message, icon: 'error', confirmButtonColor: '#06C755' });
                         console.error("Checkout Error:", error);
                     }
                 }
