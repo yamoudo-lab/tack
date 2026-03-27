@@ -970,9 +970,10 @@
                     liff.login(); 
                 } else { 
                     const profile = await liff.getProfile(); 
-                    currentUserId = profile.userId;
+                    currentUserId = profile.userId; // ◀◀ これが空でないことを確認
                     targetUserId = currentUserId; 
-
+                    
+                    console.log("Logged in user:", currentUserId); // PCデバッグ用にログを出す
                     await checkPremiumStatus(currentUserId);
 
                     const urlParams = new URLSearchParams(window.location.search);
