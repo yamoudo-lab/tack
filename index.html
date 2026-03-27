@@ -279,16 +279,29 @@
                 });
 
                 if (result.isConfirmed) {
+                    // ★ 防弾仕様：もしLINEのIDが取得できていなければ、ここで通信を止める
+                    if (!currentUserId) {
+                        Swal.fire({ title: '認証エラー', text: 'LINEのIDが認識されていません。TACKを一度閉じて開き直してください。', icon: 'error', confirmButtonColor: '#06C755' });
+                        return;
+                    }
+
                     showLoading("決済画面へ安全に接続中...");
                     try {
                         const createCheckoutSession = cloudFunc.httpsCallable('createCheckoutSession');
-                        // ▼ LINEのユーザーID（currentUserId）を持たせてバックエンドを呼び出す ▼
-                        const response = await createCheckoutSession({ userId: currentUserId });
-                        window.location.href = response.data.url;
-                   } catch (error) {
+                        
+                        // ▼ 警備員に確実にID（パスポート）を渡す
+                        const payload = { userId: currentUserId };
+                        const response = await createCheckoutSession(payload);
+                        
+                        // ▼ StripeからURLが正常に返ってきたか確認してワープ
+                        if (response && response.data && response.data.url) {
+                            window.location.href = response.data.url;
+                        } else {
+                            throw new Error("Stripeから決済URLが発行されませんでした。");
+                        }
+                    } catch (error) {
                         hideLoading();
-                        // ▼ エラーの真の理由を画面に直接表示させる ▼
-                        Swal.fire({ title: 'エラー解析中', text: '詳細: ' + error.message, icon: 'error', confirmButtonColor: '#06C755' });
+                        Swal.fire({ title: '通信エラー', text: '詳細: ' + error.message, icon: 'error', confirmButtonColor: '#06C755' });
                         console.error("Checkout Error:", error);
                     }
                 }
