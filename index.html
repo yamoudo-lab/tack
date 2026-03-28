@@ -831,6 +831,19 @@
                 cardHtml += `</div></div>`;
                 listContainer.innerHTML += cardHtml;
             }
+            // ▼▼▼ ここから追加：広告（ノイズ）の自動挿入ロジック ▼▼▼
+                cardCounter++;
+                // 無料ユーザー かつ 自分のマップ かつ 3ピンごとに1回
+                if (!isPremium && !isSharedMode && cardCounter % 3 === 0) {
+                    let adHtml = `
+                    <div class="memory-card" style="background: #f8f9fa; border: 2px dashed #ccc; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px 20px; box-shadow: none;">
+                        <div style="font-size: 0.75rem; color: #999; font-weight: bold; margin-bottom: 10px;">スポンサーリンク</div>
+                        <div style="font-size: 1.1rem; font-weight: bold; color: #333; margin-bottom: 8px;">👑 TACK Premium</div>
+                        <div style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">この広告を非表示にし、<br>マップのピン留めを無制限に拡張します。</div>
+                        <button onclick="triggerUpgrade()" class="btn" style="background-color: #333; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.2s;">アップグレード</button>
+                    </div>`;
+                    listContainer.innerHTML += adHtml;
+                }
             if (hasPins && map) { map.fitBounds(bounds); }
         }
         
