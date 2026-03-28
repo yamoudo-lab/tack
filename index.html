@@ -47,15 +47,17 @@
         .btn-delete { position: absolute; top: 15px; right: 15px; background-color: #fff; color: #d32f2f; border: 1px solid #ffcdd2; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 
         .thumb-img {
-            width: 110px;        /* ◀◀ 変更：min-widthではなく絶対幅に固定 */
+            width: 110px;
             height: 110px; 
             object-fit: cover; 
             border-radius: 10px; 
             border: 1px solid #eee; 
             cursor: pointer; 
-            transition: 0.2s; 
+            /* ▼▼▼ 魔法：アニメーションを「透明度」と「変形（タップ時の押し込み）」だけに限定する ▼▼▼ */
+            transition: opacity 0.2s, transform 0.2s; 
             box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            flex-shrink: 0;      /* ◀◀ 魔法：flexboxに「絶対に縮めるな」と強制する */
+            flex-shrink: 0;
+            display: block; /* 念のため、画像特有の「謎の隙間」も完全に殺す */
         }
         .thumb-img:active { opacity: 0.7; transform: scale(0.98);}
         .fab-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; align-items: flex-end;}
