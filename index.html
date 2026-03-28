@@ -970,7 +970,9 @@
             }
 
             const urls = window.galleryData[dateStr];
-            const memoText = window.memoData[dateStr] || "TACKからの共有";
+            const rawMemo = window.memoData[dateStr] || "";
+            // 長すぎるテキストはカットする（複数選択時と同じロジック）
+            const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "TACK スポット");
             const imageUrl = (urls && urls.length > 0) ? urls[0] : "https://koransha.com/images/noimage.png"; 
 
             const timeId = new Date(dateStr).getTime();
@@ -981,26 +983,19 @@
                 altText: "TACKから写真が届きました",
                 contents: {
                     type: "bubble",
+                    size: "kilo", // ◀◀ 魔法：大きすぎず小さすぎない「kilo」サイズに変更
+                    // ▼▼ カード全体をタップ可能にする（緑ボタンの代わり） ▼▼
+                    action: { type: "uri", label: "開く", uri: shareUrl },
                     hero: {
-                        type: "image", url: imageUrl, size: "full", aspectRatio: "20:13", aspectMode: "cover"
+                        type: "image", url: imageUrl, size: "full", aspectRatio: "4:3", aspectMode: "cover"
                     },
                     body: {
-                        type: "box", layout: "vertical",
+                        type: "box", layout: "vertical", paddingAll: "10px",
                         contents: [
-                            { type: "text", text: "TACK", weight: "bold", color: "#06C755", size: "sm" },
-                            { type: "text", text: memoText, weight: "bold", size: "lg", margin: "md", wrap: true }
+                            { type: "text", text: memoText, weight: "bold", size: "sm", wrap: true, maxLines: 4 }
                         ]
-                    },
-                    footer: {
-                        type: "box", layout: "vertical", spacing: "sm",
-                        contents: [
-                            {
-                                type: "button", style: "primary", color: "#06C755",
-                                action: { type: "uri", label: "アプリでマップを見る", uri: shareUrl }
-                            }
-                        ],
-                        flex: 0
                     }
+                    // ❌ 巨大な緑ボタン（footer）は完全に削除！
                 }
             };
 
