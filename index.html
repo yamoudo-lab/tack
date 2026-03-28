@@ -275,27 +275,7 @@
             });
         }
         // ▲▲▲ 上書きここまで ▲▲▲
-            if (result.isConfirmed) {
-                if (!currentUserId) {
-                    Swal.fire({ title: '認証エラー', text: 'LINE IDを取得できませんでした。アプリを再起動してください。', icon: 'error' });
-                    return;
-                }
-
-                showLoading("決済画面へ安全に接続中...");
-                try {
-                    const createCheckoutSession = cloudFunc.httpsCallable('createCheckoutSession');
-                    const response = await createCheckoutSession({ userId: currentUserId, uid: currentUserId });
-                    
-                    if (response && response.data && response.data.url) {
-                        window.location.href = response.data.url;
-                    }
-                } catch (error) {
-                    hideLoading();
-                    Swal.fire({ title: 'エラー', text: '詳細: ' + error.message, icon: 'error' });
-                }
-            }
-        }
-
+            
         async function checkPinLimitAndTrigger(inputId) {
             if (isSharedMode) {
                 Swal.fire({ title: 'ゲストモード', text: 'ここは他の人のマップです。', icon: 'info' });
