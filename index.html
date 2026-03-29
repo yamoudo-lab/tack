@@ -599,8 +599,6 @@
         }
 
         async function submitData() {
-            // 👇 物理ボタン感を出す「ッ」という極短バイブ（フェーズ1）
-            if (navigator.vibrate) navigator.vibrate(15);
             if (modalMap) { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); }
             if (!currentLat || !currentLng) { 
                 Swal.fire({ title: '注意', text: '場所が決定されていません。', icon: 'warning', confirmButtonColor: '#06C755' });
@@ -628,12 +626,10 @@
                     .then(() => fetch(GAS_URL + "?userId=" + targetUserId)) 
                     .then(res => res.json())
                     .then(freshData => {
-                        // 👇 大地にピンが刺さった瞬間の「ト・トッ」という快楽バイブ（フェーズ2）
-                        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
                         localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
                         renderData(freshData);
                     });
-
+                
                 closeModal();
                 
                 let tempCardHtml = `<div class="memory-card" style="border: 2px dashed #06C755; background: #f0fdf4;">`;
