@@ -832,7 +832,16 @@
 
             } // ◀◀ ⭕️ 広告の処理が終わった「後」でループを閉じる！
 
-            if (hasPins && map) { map.fitBounds(bounds); }
+            if (hasPins && map) { 
+                if (markers.length === 1) {
+                    // ▼ ピンが1つだけの場合の暴走を防ぐ魔法
+                    map.setCenter(markers[0].getPosition());
+                    map.setZoom(15); // 15〜16くらいが「町全体〜近隣」が見える最適な距離だ
+                } else {
+                    // ▼ 複数ピンがある場合は全体が収まるように自動調整
+                    map.fitBounds(bounds); 
+                }
+            }
         }
         
         document.getElementById('memo-input').addEventListener('focus', function() {
