@@ -17,7 +17,7 @@
         body, html { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; background-color: #f4f7f9; }
         #map-section { flex: 0 0 45%; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
         #map { width: 100%; height: 100%; border: none; }
-        /* TACKロゴ(header-pill)は削除し、複数選択ボタンを左上に配置 */
+        
         #mode-toggle-btn {
             position: absolute; top: 15px; left: 15px; z-index: 100; background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(5px); color: #555; border: 1px solid #ccc; padding: 8px 15px;
@@ -37,7 +37,6 @@
         .memory-text { font-size: 1rem; line-height: 1.5; margin-bottom: 15px; white-space: pre-wrap; color: #222; }
         .btn-container { display: flex; gap: 10px; flex-wrap: wrap; transition: 0.3s; }
         
-        /* ▼ アイコンとボタンの統一デザイン ▼ */
         .material-symbols-outlined { font-size: 18px; vertical-align: middle; }
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; text-decoration: none; font-weight: bold; cursor:pointer; gap: 5px; background-color: #fff; border: 1px solid #ddd; color: #555; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s; }
         .btn:active { background-color: #f0f0f0; }
@@ -47,23 +46,13 @@
         .btn-delete { position: absolute; top: 15px; right: 15px; background-color: #fff; color: #d32f2f; border: 1px solid #ffcdd2; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 
         .thumb-img {
-            width: 110px;
-            height: 110px; 
-            object-fit: cover; 
-            border-radius: 10px; 
-            border: 1px solid #eee; 
-            cursor: pointer; 
-            /* ▼▼▼ 魔法：アニメーションを「透明度」と「変形（タップ時の押し込み）」だけに限定する ▼▼▼ */
-            transition: opacity 0.2s, transform 0.2s; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            flex-shrink: 0;
-            display: block; /* 念のため、画像特有の「謎の隙間」も完全に殺す */
+            width: 110px; height: 110px; object-fit: cover; border-radius: 10px; border: 1px solid #eee; cursor: pointer; 
+            transition: opacity 0.2s, transform 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.08); flex-shrink: 0; display: block;
         }
         .thumb-img:active { opacity: 0.7; transform: scale(0.98);}
         .fab-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; align-items: flex-end;}
         .fab-main { width: 65px; height: 65px; background-color: #06C755; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 36px; box-shadow: 0 6px 15px rgba(6, 199, 85, 0.4); cursor: pointer; transition: 0.2s; font-weight: bold;}
         
-        /* ライトボックス・モーダル等は省略せず維持 */
         #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; justify-content: center; align-items: center; }
         #lb-img { max-width: 100%; max-height: 75vh; object-fit: contain; border-radius: 8px; }
         .lb-close { position: absolute; top: 20px; right: 20px; color: white; font-size: 36px; cursor: pointer; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); padding: 10px;}
@@ -76,8 +65,12 @@
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px 20px 60px 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; max-height: 90dvh; overflow-y: auto;}
         #preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; flex-shrink: 0;}
-        .preview-box { aspect-ratio: 1/1; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #ddd; background: #fafafa;}
-        .preview-box img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* 👇 サムネイル選択のためのプレビューボックスのスタイル追加 */
+        .preview-box { aspect-ratio: 1/1; border-radius: 8px; overflow: hidden; position: relative; border: 2px solid transparent; background: #fafafa; transition: 0.2s;}
+        .preview-box.active { border: 3px solid #06C755; box-shadow: 0 0 8px rgba(6, 199, 85, 0.5); }
+        .preview-box img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+        
         .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; cursor: pointer; }
         .add-more-box { aspect-ratio: 1/1; border-radius: 8px; border: 2px dashed #ccc; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888; cursor: pointer; background: #fafafa;}
         .add-more-box span { font-size: 28px; font-weight: bold; line-height: 1; margin-bottom: 2px;}
@@ -99,20 +92,18 @@
         .memory-text.collapsed { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }
         .read-more-btn { color: #06C755; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-bottom: 15px; display: inline-block; }
 
-        /* ▼▼▼ 複数選択モード用のスタイル（日付も一緒にズラす） ▼▼▼ */
         .select-checkbox { display: none; position: absolute; top: 20px; left: 15px; width: 22px; height: 22px; z-index: 5; cursor: pointer; accent-color: #06C755; }
         .selection-mode .select-checkbox { display: block; pointer-events: none; }
         .selection-mode .memory-card { padding-left: 50px; cursor: pointer; background-color: #f0fdf4; }
         .selection-mode .memory-card.selected { border: 2px solid #06C755; }
-        .selection-mode .memory-date { left: 50px; } /* ←★ここがミソ。押し出されるように日付も右へスライドする */
+        .selection-mode .memory-date { left: 50px; } 
         
-        /* 複数選択モード時、画像とボタン類へのタップを完全に無効化。半透明で視覚的にも「押せない」ことを示す */
         .selection-mode .memory-card img.thumb-img,
         .selection-mode .memory-card .btn-container,
         .selection-mode .memory-card .read-more-btn,
         .selection-mode .memory-card .memory-text a {
             pointer-events: none;
-            opacity: 0.3; /* 全ボタン群が薄くなる */
+            opacity: 0.3; 
         }
         .selection-mode .memory-card .btn-delete {
             pointer-events: none;
@@ -184,8 +175,8 @@
         const db = firebase.firestore();
         const cloudFunc = firebase.functions();
         
-        let currentPinCount = 0; // 現在のピン数をカウント
-        let isPremium = false;   // 課金ユーザーかどうかのフラグ
+        let currentPinCount = 0; 
+        let isPremium = false;   
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxS4N8TrRihDFQJnNMjbiKYUTtCEIkX0rBqTpbxVkzUBidv-CcSi-Ym-TU9EtfPxY18/exec";
         
@@ -196,7 +187,7 @@
         let currentUserId = ""; 
         let targetUserId = "";  
         let isSharedMode = false; 
-        let filterIds = [];      
+        let filterIds = [];     
 
         window.galleryData = {}; window.memoData = {};
         let currentLbDate = ""; let currentLbIndex = 0; let currentEditDate = ""; let currentAppendDate = "";
@@ -207,32 +198,22 @@
         function showLoading(text) { document.getElementById('loading').style.display = 'flex'; document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`; }
         function hideLoading() { document.getElementById('loading').style.display = 'none'; }
 
-        // ▼▼▼ OSの「ファイルを選んだ記憶」を破壊してリセットする魔法 ▼▼▼
         function triggerFileInput(id) {
             let oldInput = document.getElementById(id);
-            let newInput = oldInput.cloneNode(true); // タグをコピー
-            newInput.value = ''; // 記憶をリセット
-            newInput.onchange = oldInput.onchange; // 処理を引き継ぎ
-            oldInput.parentNode.replaceChild(newInput, oldInput); // 古いものを捨てて入れ替え
-            newInput.click(); // クリック発火
+            let newInput = oldInput.cloneNode(true); 
+            newInput.value = ''; 
+            newInput.onchange = oldInput.onchange; 
+            oldInput.parentNode.replaceChild(newInput, oldInput); 
+            newInput.click(); 
         }
 
-        // ▼▼▼ Revised autoLink Function（標準リンクをブルーに、裏技はグリーンに） ▼▼▼
         function autoLink(text) {
             if (!text) return "";
             let linked = text;
             
-            // 1. URLを【ブルー】のリンクに変換 (Clash avoidance)
-            // LINE-style interaction blue: #1B75BB or similar. Using a clean standard blue: #007bff
             linked = linked.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #007bff; text-decoration: underline; word-break: break-all;">$1</a>');
-            
-            // 2. 電話番号をタップ可能な【ブルー】の電話リンクに変換 (Clash avoidance)
             linked = linked.replace(/(0\d{1,4}-\d{1,4}-\d{3,4})/g, '<a href="tel:$1" style="color: #007bff; text-decoration: underline;">$1</a>');
-            
-            // 3. 【隠し裏技1】 **文字** で、TACKグリーンの太字ハイライト (Preserve green for this special feature)
             linked = linked.replace(/\*\*(.*?)\*\*/g, '<span style="color: #06C755; font-weight: bold; font-size: 1.1em;">$1</span>');
-            
-            // 4. 【隠し裏技2】 !!文字!! で、現場用の赤字アラート（背景マーカーなしの純粋な赤太字）
             linked = linked.replace(/!!(.*?)!!/g, '<span style="color: #d32f2f; font-weight: bold;">$1</span>');
             
             return linked;
@@ -259,7 +240,6 @@
             triggerFileInput('append-photo-trigger'); 
         }
 
-        // ▼▼▼ 魔法1：ユーザーの課金状態を確認する ▼▼▼
         async function checkPremiumStatus(uid) {
             try {
                 const doc = await db.collection("users").doc(uid).get();
@@ -271,21 +251,18 @@
             }
         }
 
-        // ▼▼▼ このブロックで丸ごと上書きする ▼▼▼
         async function triggerUpgrade() {
             if (isSharedMode) return;
 
-            // 【寸止め装置】Stripeへは飛ばさず、期待感だけを煽る
             Swal.fire({
                 title: '👑 TACK Premium',
                 html: '現在、プレミアム機能は正式リリースに向けて<br><b>最終準備中</b>です！<br><br>もうしばらくお待ちください🚀',
                 icon: 'info',
-                confirmButtonColor: '#06C755', // TACKのブランドカラー
+                confirmButtonColor: '#06C755',
                 confirmButtonText: '楽しみに待つ！',
                 heightAuto: false
             });
         }
-        // ▲▲▲ 上書きここまで ▲▲▲
             
         async function checkPinLimitAndTrigger(inputId) {
             if (isSharedMode) {
@@ -293,7 +270,6 @@
                 return;
             }
             
-            // ★ 最後の手段：もしIDが空なら、この瞬間に再取得を試みる
             if (!currentUserId && liff.isLoggedIn()) {
                 const profile = await liff.getProfile();
                 currentUserId = profile.userId;
@@ -318,7 +294,6 @@
                 });
 
                 if (result.isConfirmed) {
-                    // ★ ここでIDがなければ絶対に中止する
                     if (!currentUserId) {
                         Swal.fire({ title: '認証エラー', text: 'LINE IDを取得できませんでした。アプリを再起動してください。', icon: 'error' });
                         return;
@@ -327,7 +302,6 @@
                     showLoading("決済画面へ安全に接続中...");
                     try {
                         const createCheckoutSession = cloudFunc.httpsCallable('createCheckoutSession');
-                        // 明示的に最新のIDを詰め込む
                         const response = await createCheckoutSession({ userId: currentUserId, uid: currentUserId });
                         
                         if (response && response.data && response.data.url) {
@@ -514,13 +488,11 @@
                 stagingFiles = stagingFiles.concat(files.slice(0, 5 - stagingFiles.length));
             } else { stagingFiles = stagingFiles.concat(files); }
             
-            // ▼ ここからが魔法。低スペック端末のOSに「息継ぎ（0.5秒）」の時間を与える ▼
             setTimeout(() => {
                 renderPreviews(); 
                 document.getElementById('input-modal').style.display = 'flex'; 
                 getGps(); 
             }, 500); 
-            // ▲ ここまで ▲
             
             event.target.value = ''; 
         }
@@ -532,22 +504,17 @@
             currentLat = null; currentLng = null; stagingFiles = []; renderPreviews();
         }
 
-        // ▼▼▼ ①カメラ表示消失対策: ファイル入力タグをリセット（再生成）する魔法 ▼▼▼
         function resetFileInput(inputId) {
             const container = document.getElementById('file-input-container');
             const oldInput = document.getElementById(inputId);
             if (!oldInput) return;
 
-            // 新しいinputタグをクローン
             const newInput = oldInput.cloneNode(true); 
-            newInput.value = ""; // 値をリセット
+            newInput.value = ""; 
 
-            // 古いものを削除し、新しいものを追加
             container.replaceChild(newInput, oldInput);
 
-            // クローンするとイベントリスナーが消えるので、再度セットする
             newInput.addEventListener('change', (event) => {
-                // ここで既存のハンドラを呼び出す
                 if (inputId === 'add-more-trigger' || inputId === 'main-trigger') {
                     handleDirectFiles(event);
                 } else if (inputId === 'append-photo-trigger') {
@@ -556,25 +523,40 @@
             });
         }
 
+        // ▼▼▼ 魔法の「サムネイル選択機能」を搭載したプレビュー描画 ▼▼▼
         function renderPreviews() {
             const grid = document.getElementById('preview-grid'); grid.innerHTML = ''; 
             stagingFiles.forEach((file, index) => {
-                const box = document.createElement('div'); box.className = 'preview-box';
+                const box = document.createElement('div'); 
+                // 最初（0番目）の画像をデフォルトでアクティブ枠にする
+                box.className = 'preview-box' + (index === 0 ? ' active' : '');
+                box.dataset.index = index; // インデックスを記憶
+
                 const img = document.createElement('img'); const reader = new FileReader();
                 reader.onload = function(e) { img.src = e.target.result; }; reader.readAsDataURL(file);
-                const deleteBtn = document.createElement('div'); deleteBtn.className = 'delete-btn'; deleteBtn.innerText = '✕'; deleteBtn.onclick = function() { removeFile(index); };
+
+                // 画像をタップしたときの処理（サムネイル切り替え）
+                img.onclick = function() {
+                    document.querySelectorAll('.preview-box').forEach(el => el.classList.remove('active'));
+                    box.classList.add('active');
+                };
+
+                const deleteBtn = document.createElement('div'); deleteBtn.className = 'delete-btn'; deleteBtn.innerText = '✕'; 
+                deleteBtn.onclick = function(e) { 
+                    e.stopPropagation(); // 削除ボタンのタップが画像選択に誤爆しないための防壁
+                    removeFile(index); 
+                };
+                
                 box.appendChild(img); box.appendChild(deleteBtn); grid.appendChild(box);
             });
             if (stagingFiles.length < 5) {
                 const addBox = document.createElement('div'); addBox.className = 'add-more-box';
-                // ▼ ここを main-trigger に書き換える！ ▼
                 addBox.onclick = function() { triggerFileInput('main-trigger'); }; addBox.innerHTML = `<span>＋</span><p>追加</p>`; grid.appendChild(addBox);
             }
         }
 
         function removeFile(index) { stagingFiles.splice(index, 1); renderPreviews(); }
 
-        // ▼▼▼ 修正：独立した正しい関数としてここに配置！ ▼▼▼
         async function importMemory(dateStr, latStr, lngStr) {
             const result = await Swal.fire({
                 title: '自分のマップに保存', 
@@ -609,6 +591,7 @@
             }
         }
 
+        // ▼▼▼ 選ばれたサムネイルを配列の先頭に割り込ませる送信機能 ▼▼▼
         async function submitData() {
             if (modalMap) { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); }
             if (!currentLat || !currentLng) { 
@@ -622,7 +605,20 @@
             try {
                 const memoText = document.getElementById('memo-input').value; const gpsText = `${currentLat},${currentLng}`;
                 
-                const uploadPromises = stagingFiles.map(async (file, i) => {
+                // --- 💡 [Phase Shift] Thumbnail Selection Logic ---
+                const activeBox = document.querySelector('.preview-box.active');
+                let targetFilesOrder = [...stagingFiles]; // デフォルトの順序
+
+                if (activeBox) {
+                    const selectedIndex = parseInt(activeBox.dataset.index);
+                    if (selectedIndex > 0) {
+                        // 選ばれた画像を配列の先頭（0番目）にスライド移動させる魔法
+                        targetFilesOrder.splice(0, 0, targetFilesOrder.splice(selectedIndex, 1)[0]);
+                    }
+                }
+                // --------------------------------------------------
+                
+                const uploadPromises = targetFilesOrder.map(async (file, i) => {
                     let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
                     let filename = `liff_${Date.now()}_${i}.jpg`;
                     let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
@@ -746,7 +742,6 @@
             markers.forEach(marker => marker.setMap(null));
             markers = []; 
 
-            // ◀◀ 追加：描画したカードの数を数えるカウンター
             let cardCounter = 0; 
 
             for (let i = data.length - 1; i > 0; i--) {
@@ -793,11 +788,9 @@
                 if (date) cardHtml += `<div class="memory-date">${new Date(date).toLocaleString('ja-JP')}</div>`;
                 if (textToShow) {
                     if (textToShow.length > 80 || (textToShow.match(/\n/g) || []).length >= 3) {
-                        // ▼ autoLink() で包む！
                         cardHtml += `<div class="memory-text collapsed" id="memo-${timeId}">${autoLink(textToShow)}</div>`;
                         cardHtml += `<div class="read-more-btn" id="rmbtn-${timeId}" onclick="toggleMemo('${timeId}')">▼ 続きを読む</div>`;
                     } else {
-                        // ▼ autoLink() で包む！
                         cardHtml += `<div class="memory-text">${autoLink(textToShow)}</div>`;
                     }
                 }
@@ -827,7 +820,6 @@
                 cardHtml += `</div></div>`;
                 listContainer.innerHTML += cardHtml;
 
-                // ▼▼▼ ここから追加：広告（ノイズ）の自動挿入ロジック ▼▼▼
                 cardCounter++;
                 if (!isPremium && !isSharedMode && cardCounter % 3 === 0) {
                     let adHtml = `
@@ -839,17 +831,14 @@
                     </div>`;
                     listContainer.innerHTML += adHtml;
                 }
-                // ▲▲▲ ここまで追加 ▲▲▲
 
-            } // ◀◀ ⭕️ 広告の処理が終わった「後」でループを閉じる！
+            }
 
             if (hasPins && map) { 
                 if (markers.length === 1) {
-                    // ▼ ピンが1つだけの場合の暴走を防ぐ魔法
                     map.setCenter(markers[0].getPosition());
-                    map.setZoom(15); // 15〜16くらいが「町全体〜近隣」が見える最適な距離だ
+                    map.setZoom(15); 
                 } else {
-                    // ▼ 複数ピンがある場合は全体が収まるように自動調整
                     map.fitBounds(bounds); 
                 }
             }
@@ -937,17 +926,14 @@
                 return {
                     type: "bubble",
                     size: "micro",
-                    // ▼ ① カード全体をタップした時のワープ先を設定 ▼
                     action: { type: "uri", label: "開く", uri: shareUrl },
                     hero: { type: "image", url: imageUrl, size: "full", aspectRatio: "4:3", aspectMode: "cover" },
                     body: {
                         type: "box", layout: "vertical", paddingAll: "10px",
                         contents: [ 
-                            // ▼ ② ボタンが消えた分、テキストを2行から4行へ拡張 ▼
                             { type: "text", text: memoText, weight: "bold", size: "sm", wrap: true, maxLines: 4 } 
                         ]
                     }
-                    // ▼ ③ footerブロック（緑のボタン）は丸ごと削除 ▼
                 };
             });
 
@@ -976,7 +962,6 @@
 
             const urls = window.galleryData[dateStr];
             const rawMemo = window.memoData[dateStr] || "";
-            // 長すぎるテキストはカットする（複数選択時と同じロジック）
             const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "TACK スポット");
             const imageUrl = (urls && urls.length > 0) ? urls[0] : "https://koransha.com/images/noimage.png"; 
 
@@ -988,8 +973,7 @@
                 altText: "TACKから写真が届きました",
                 contents: {
                     type: "bubble",
-                    size: "kilo", // ◀◀ 魔法：大きすぎず小さすぎない「kilo」サイズに変更
-                    // ▼▼ カード全体をタップ可能にする（緑ボタンの代わり） ▼▼
+                    size: "kilo", 
                     action: { type: "uri", label: "開く", uri: shareUrl },
                     hero: {
                         type: "image", url: imageUrl, size: "full", aspectRatio: "4:3", aspectMode: "cover"
@@ -1000,7 +984,6 @@
                             { type: "text", text: memoText, weight: "bold", size: "sm", wrap: true, maxLines: 4 }
                         ]
                     }
-                    // ❌ 巨大な緑ボタン（footer）は完全に削除！
                 }
             };
 
@@ -1023,10 +1006,10 @@
                     liff.login(); 
                 } else { 
                     const profile = await liff.getProfile(); 
-                    currentUserId = profile.userId; // ◀◀ これが空でないことを確認
+                    currentUserId = profile.userId; 
                     targetUserId = currentUserId; 
                     
-                    console.log("Logged in user:", currentUserId); // PCデバッグ用にログを出す
+                    console.log("Logged in user:", currentUserId); 
                     await checkPremiumStatus(currentUserId);
 
                     const urlParams = new URLSearchParams(window.location.search);
@@ -1038,18 +1021,15 @@
                         filterIds = filterParam.split(',');
                         isSharedMode = true; 
 
-                        // ▼ ゲストモード時の見た目
                         document.querySelector('.fab-container').style.display = 'none';
                         const modeBtn = document.getElementById('mode-toggle-btn');
                         
-                        // ▼▼▼ 右上のボタンを「自分のマップへ」という強力な導線に書き換える ▼▼▼
                         modeBtn.innerHTML = `<span class="material-symbols-outlined">home</span>自分のマップへ`;
                         modeBtn.style.backgroundColor = "#06C755"; 
                         modeBtn.style.color = "white";
                         modeBtn.style.borderColor = "#06C755";
                         modeBtn.style.pointerEvents = "auto"; 
                         
-                        // ボタンを押したら、共有パラメータ（uid等）の無い「素のTACK」へ強制ワープ！
                         modeBtn.onclick = function() {
                             window.location.href = "https://liff.line.me/2009431992-aQfZHA0X";
                         };
