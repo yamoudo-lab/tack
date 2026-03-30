@@ -232,8 +232,8 @@
             // 3. 【隠し裏技1】 **文字** で、TACKグリーンの太字ハイライト (Preserve green for this special feature)
             linked = linked.replace(/\*\*(.*?)\*\*/g, '<span style="color: #06C755; font-weight: bold; font-size: 1.1em;">$1</span>');
             
-            // 4. 【隠し裏技2】 !!文字!! で、現場用の赤字アラート (Preserve red)
-            linked = linked.replace(/!!(.*?)!!/g, '<span style="color: #d32f2f; font-weight: bold; background-color: #ffebee; padding: 0 4px; border-radius: 4px;">$1</span>');
+            // 4. 【隠し裏技2】 !!文字!! で、現場用の赤字アラート（背景マーカーなしの純粋な赤太字）
+            linked = linked.replace(/!!(.*?)!!/g, '<span style="color: #d32f2f; font-weight: bold;">$1</span>');
             
             return linked;
         }
