@@ -17,6 +17,7 @@
         body, html { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; background-color: #f4f7f9; }
         #map-section { flex: 0 0 45%; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
         #map { width: 100%; height: 100%; border: none; }
+        
         #mode-toggle-btn {
             position: absolute; top: 15px; left: 15px; z-index: 100; background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(5px); color: #555; border: 1px solid #ccc; padding: 8px 15px;
@@ -117,9 +118,9 @@
     <div id="send-multiple-fab" onclick="shareSelectedMemories()"> 0件をLINEで送る</div>
 
     <div id="file-input-container">
-        <input type="file" id="main-trigger" accept="image/*" multiple capture="environment" onchange="handleDirectFiles(event)" style="display: none;">
-        <input type="file" id="add-more-trigger" accept="image/*" multiple onchange="handleDirectFiles(event)" style="display: none;">
-        <input type="file" id="append-photo-trigger" accept="image/*" multiple capture="environment" onchange="handleAppendPhotos(event)" style="display: none;">
+        <input type="file" id="main-trigger" accept="image/*" multiple capture="environment" style="display: none;">
+        <input type="file" id="add-more-trigger" accept="image/*" multiple style="display: none;">
+        <input type="file" id="append-photo-trigger" accept="image/*" multiple capture="environment" style="display: none;">
     </div>
 
     <div id="lightbox">
@@ -158,7 +159,6 @@
         };
         firebase.initializeApp(firebaseConfig);
         const storage = firebase.storage();
-
         const db = firebase.firestore();
         const cloudFunc = firebase.functions();
         
@@ -185,11 +185,22 @@
         function showLoading(text) { document.getElementById('loading').style.display = 'flex'; document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`; }
         function hideLoading() { document.getElementById('loading').style.display = 'none'; }
 
-        // ▼ バグ修正：安全にファイル入力をリセットする処理
+        // ✅ バグ修正1：カメラの「神経」を確実に繋ぎ直す魔法
         function triggerFileInput(id) {
-            let input = document.getElementById(id);
-            input.value = ''; // これだけで十分リセットされる
-            input.click();
+            let oldInput = document.getElementById(id);
+            if (!oldInput) return;
+            let newInput = oldInput.cloneNode(true); 
+            newInput.value = ''; 
+            
+            // 明示的に処理関数を割り当てる（これで絶対に死なない）
+            if (id === 'append-photo-trigger') {
+                newInput.onchange = handleAppendPhotos;
+            } else {
+                newInput.onchange = handleDirectFiles;
+            }
+            
+            oldInput.parentNode.replaceChild(newInput, oldInput); 
+            newInput.click(); 
         }
 
         function autoLink(text) {
@@ -255,11 +266,20 @@
                 const profile = await liff.getProfile();
                 currentUserId = profile.userId;
             }
-            const cachedDataStr = localStorage.getItem("memoryMapCache_" + currentUserId);
-            if (cachedDataStr) {
-                const data = JSON.parse(cachedDataStr);
-                currentPinCount = data.filter(row => row[0] !== "" && row[0] !== "日付").length;
+            
+            // ✅ バグ修正2：キャッシュ異常によるフリーズを防ぐ強固な防壁
+            try {
+                const cachedDataStr = localStorage.getItem("memoryMapCache_" + currentUserId);
+                if (cachedDataStr) {
+                    const data = JSON.parse(cachedDataStr);
+                    if (Array.isArray(data)) {
+                        currentPinCount = data.filter(row => row && row[0] !== "" && row[0] !== "日付").length;
+                    }
+                }
+            } catch (e) {
+                console.log("キャッシュが異常なためスキップします");
             }
+
             if (!isPremium && currentPinCount >= 20) {
                 const result = await Swal.fire({
                     title: '📌 マップの限界に到達',
@@ -338,8 +358,7 @@
             }
 
             Swal.fire({ title: 'アップロード開始', text: '裏側で保存しています...', icon: 'info', timer: 1500, showConfirmButton: false });
-            document.getElementById('append-photo-trigger').value = '';
-
+            
             try {
                 const uploadPromises = files.map(async (file, i) => {
                     let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
@@ -475,7 +494,7 @@
 
         function closeModal() {
             document.getElementById('input-modal').style.display = 'none';
-            document.getElementById('main-trigger').value = ""; document.getElementById('add-more-trigger').value = ""; document.getElementById('memo-input').value = "";
+            document.getElementById('memo-input').value = "";
             document.getElementById('gps-status').innerText = "⏳ GPS Loading..."; document.getElementById('modal-map-container').style.display = 'none'; 
             currentLat = null; currentLng = null; stagingFiles = []; renderPreviews();
         }
@@ -633,8 +652,10 @@
             const cacheKey = "memoryMapCache_" + targetUserId;
             const cachedDataStr = localStorage.getItem(cacheKey);
             if (cachedDataStr) {
-                const cachedData = JSON.parse(cachedDataStr);
-                renderData(cachedData); 
+                try {
+                    const cachedData = JSON.parse(cachedDataStr);
+                    renderData(cachedData); 
+                } catch(e) {}
                 hideLoading();
             }
 
@@ -732,7 +753,8 @@
                 cardHtml += `<div class="btn-container">`;
                 if (latStr && lngStr) {
                     cardHtml += `<button onclick="focusMap(${latStr}, ${lngStr})" class="btn btn-map"><span class="material-symbols-outlined">place</span>マップ</button>`;
-                    cardHtml += `<a href="https://maps.google.com/?q=${latStr},${lngStr}" target="_blank" class="btn btn-nav"><span class="material-symbols-outlined">directions_car</span>ナビ開始</a>`;
+                    // ✅ バグ修正3：ナビゲーションのURLを正常なGoogle Mapsフォーマットに修復
+                    cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=${latStr},${lngStr}" target="_blank" class="btn btn-nav"><span class="material-symbols-outlined">directions_car</span>ナビ開始</a>`;
                 }
                 
                 if (!isSharedMode) {
