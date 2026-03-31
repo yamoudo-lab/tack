@@ -519,7 +519,7 @@
         async function importMemory(dateStr, latStr, lngStr) {
             const result = await Swal.fire({
                 title: '自分のマップに保存', 
-                text: "このスポットを自分のTACKにインポートしますか？", 
+                text: "このカードを自分のTACKにインポートしますか？", 
                 icon: 'question',
                 showCancelButton: true, confirmButtonColor: '#06C755', confirmButtonText: '保存する'
             });
@@ -847,7 +847,7 @@
                 sendFab.style.pointerEvents = "auto";
                 sendFab.style.transform = "translateX(-50%) scale(1.05)";
             } else {
-                sendFab.innerText = ` スポットを選択...`;
+                sendFab.innerText = ` カードを選択...`;
                 sendFab.style.backgroundColor = "#9e9e9e"; 
                 sendFab.style.pointerEvents = "none";
                 sendFab.style.transform = "translateX(-50%) scale(1.0)";
@@ -867,7 +867,7 @@
             const bubbles = selectedMemories.map(dateStr => {
                 const urls = window.galleryData[dateStr];
                 const rawMemo = window.memoData[dateStr] || "";
-                const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "TACK スポット");
+                const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "TACK カード");
                 const imageUrl = (urls && urls.length > 0) ? urls[0] : "https://koransha.com/images/noimage.png"; 
 
                 return {
@@ -886,7 +886,7 @@
 
             const flexMessage = {
                 type: "flex",
-                altText: `${selectedMemories.length}件のおすすめスポットが届きました`,
+                altText: `${selectedMemories.length}件のおすすめカードが届きました`,
                 contents: { type: "carousel", contents: bubbles }
             };
 
@@ -909,7 +909,7 @@
 
             const urls = window.galleryData[dateStr];
             const rawMemo = window.memoData[dateStr] || "";
-            const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "TACK スポット");
+            const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "TACK カード");
             const imageUrl = (urls && urls.length > 0) ? urls[0] : "https://koransha.com/images/noimage.png"; 
 
             const timeId = new Date(dateStr).getTime();
