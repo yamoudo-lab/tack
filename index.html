@@ -503,8 +503,11 @@
             const grid = document.getElementById('preview-grid'); grid.innerHTML = ''; 
             stagingFiles.forEach((file, index) => {
                 const box = document.createElement('div'); box.className = 'preview-box';
-                const img = document.createElement('img'); const reader = new FileReader();
-                reader.onload = function(e) { img.src = e.target.result; }; reader.readAsDataURL(file);
+                
+                // 👇 ここがPhase Shift！ FileReaderを捨て、軽量なObjectURLに切り替える
+                const img = document.createElement('img'); 
+                img.src = URL.createObjectURL(file);
+                
                 const deleteBtn = document.createElement('div'); deleteBtn.className = 'delete-btn'; deleteBtn.innerText = '✕'; deleteBtn.onclick = function() { removeFile(index); };
                 box.appendChild(img); box.appendChild(deleteBtn); grid.appendChild(box);
             });
