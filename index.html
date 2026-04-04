@@ -645,11 +645,11 @@
                 return; 
             }
 
-            // 💡 Phase Shift: 『空間的結合（Spatial Merge）』の判定
+            // 💡 Phase Shift: 過去のピンに乗せたかどうかの判定
             let targetMergeDate = null;
             if (window.cardLocations) {
                 for (let loc of window.cardLocations) {
-                    // グレーのピン（過去のカード）の半径約5メートル以内に落としたかチェック
+                    // グレーのピンの約5メートル以内に落としたかチェック
                     if (Math.abs(loc.lat - currentLat) < 0.00005 && Math.abs(loc.lng - currentLng) < 0.00005) {
                         targetMergeDate = loc.date;
                         break; 
@@ -660,31 +660,31 @@
             if (targetMergeDate) {
                 // 📍 重なっている場合の「意思確認」
                 const res = await Swal.fire({
-                    title: '📌 過去のピンと重なっています',
-                    html: `この場所にはすでに記録があります。<br>過去のカードに写真を<b>追加（結合）</b>しますか？<br>それとも全く新しいカードを作りますか？`,
+                    title: '📌 過去の記録に重ねますか？',
+                    html: `この場所にはすでにカードがあります。<br>過去の記録に<b>追加（結合）</b>しますか？`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#06C755',
                     cancelButtonColor: '#FFA000',
-                    confirmButtonText: '過去に追加する',
+                    confirmButtonText: '追加する',
                     cancelButtonText: '新しく作る'
                 });
 
                 if (res.isConfirmed) {
-                    // 🔄 【結合モード】過去のカードに画像とメモを追記して終了する
+                    // 【結合モード】過去のカードに追記して終了
                     await executeMerge(targetMergeDate);
-                    return; // 新規作成はせず、ここで処理を止める
+                    return; 
                 } else {
-                    // 🆕 【分離モード】新しく作る場合、視覚的な「吸収（ピン被り）」を防ぐためにシステムが数メートルだけ座標をずらす
-                    currentLat += 0.00003;
-                    currentLng += 0.00003;
+                    // 【分離モード】新しく作る場合、視覚的な「吸収」を防ぐために座標を強制的に弾き飛ばす
+                    currentLat += 0.0001;
+                    currentLng -= 0.0001;
                 }
             }
 
             const btn = document.querySelector('#input-modal .btn-submit'); 
             btn.innerText = "Uploading..."; btn.disabled = true; 
             
-            // 👇 ここから下は既存の try { ... } 処理が続く
+            // 👇 (この下は既存の try { ... } 処理が続く)
             
             try {
                 const memoText = document.getElementById('memo-input').value; const gpsText = `${currentLat},${currentLng}`;
