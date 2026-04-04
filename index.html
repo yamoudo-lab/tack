@@ -782,10 +782,9 @@
                             });
                             markers.push(marker); 
                             bounds.extend(position); hasPins = true;
-                        }
-                    }
-                }
-                } else { textToShow = typeOrText; }
+                        } // 👈 if(latLngArr.length === 2 && map) の閉じカッコ
+                    } // 👈 if (colE) の閉じカッコ
+                } else { textToShow = typeOrText; } // 👈 else if (位置情報) の閉じカッコ ＋ else 
 
                 let cardHtml = `<div class="memory-card" id="card-${timeId}" ${!isSharedMode ? `onclick="if(isSelectionMode) toggleCardSelection('${date}', '${timeId}')"` : ''}>`;
                 
