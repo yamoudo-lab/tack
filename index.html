@@ -693,6 +693,7 @@
             markers = []; 
 
             let cardCounter = 0; 
+            let usedPositions = []; // 📍追加：これまでに打ったピンの座標を記憶する配列
 
             for (let i = data.length - 1; i > 0; i--) {
                 const row = data[i]; const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || "";
@@ -719,9 +720,21 @@
                         const latLngArr = String(colE).split(",");
                         if(latLngArr.length === 2 && map) {
                             latStr = latLngArr[0]; lngStr = latLngArr[1];
-                            const position = { lat: parseFloat(latStr), lng: parseFloat(lngStr) };
+                            let latNum = parseFloat(latStr);
+                            let lngNum = parseFloat(lngStr);
+
+                            // 💡 Phase Shift: 『空間の揺らぎ（Jitter）』アルゴリズム
+                            // 既存のピンと「約5メートル以内」に重なっているかチェック
+                            let isOverlap = usedPositions.some(p => Math.abs(p.lat - latNum) < 0.00005 && Math.abs(p.lng - lngNum) < 0.00005);
+                            if (isOverlap) {
+                                // 重なっていたら、ランダムに5〜15メートルほど周囲に散らす
+                                latNum += (Math.random() - 0.5) * 0.0002;
+                                lngNum += (Math.random() - 0.5) * 0.0002;
+                            }
+                            usedPositions.push({lat: latNum, lng: lngNum}); // 記憶する
+
+                            const position = { lat: latNum, lng: lngNum };
                             const marker = new google.maps.Marker({ position: position, map: map, title: colC });
-                            marker.addListener("click", () => { jumpToCard(date, latStr, lngStr); });
                             markers.push(marker); 
                             bounds.extend(position); hasPins = true;
                         }
