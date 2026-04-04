@@ -853,21 +853,32 @@
                             window.cardLocations.push({ date: date, lat: latNum, lng: lngNum });
 
                             const position = { lat: latNum, lng: lngNum };
-                            const marker = new google.maps.Marker({
-                                position: position,
-                                map: map,
+                            
+                            // 💡 白縁（ホワイトアウトライン）のカスタムピンをコードで生成
+                            const pinSvg = {
+                                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", // ピンの形
+                                fillColor: "#FF5252", // ピンの中身（赤）
+                                fillOpacity: 1,
+                                strokeWeight: 2.5,    // 👈 縁の太さ
+                                strokeColor: "#FFFFFF", // 👈 ここが念願の「白縁」！
+                                scale: 1.5,            // 👈 ここで全体の大きさを微調整（1.2〜1.8くらいがおすすめ）
+                                anchor: new google.maps.Point(12, 22), // 針の先端を座標に合わせる
+                                labelOrigin: new google.maps.Point(12, 9)
+                            };
+
+                            const marker = new google.maps.Marker({ 
+                                position: position, 
+                                map: map, 
                                 title: colC,
-                                icon: {
-                                    url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-                                    scaledSize: new google.maps.Size(32, 32)
-                                }
+                                icon: pinSvg // 生成した白縁ピンをセット
                             });
 
-                            marker.addListener("click", () => {
-                                jumpToCard(date, latStr, lngStr);
+                            // タップ連動機能
+                            marker.addListener("click", () => { 
+                                jumpToCard(date, latStr, lngStr); 
                             });
 
-                            markers.push(marker);
+                            markers.push(marker); 
                             bounds.extend(position); hasPins = true;
                         } // 👈 874行目、ここまでのカッコを含めて消す
                     }
