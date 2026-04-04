@@ -854,19 +854,18 @@
 
                             const position = { lat: latNum, lng: lngNum };
                             
-                            // 💡 雫の逆型（骨格）そのものをスリムに整形したカスタムSVG
+                            // 💡 中心円（〇）をさらに小さく絞り込んだ、究極のスリムSVG
                             const pinSvg = {
-                                // 👈 これがぽっちゃり型を卒業した、スリムなピンの新しい骨格（SVGパス）だ！
-                                path: "M12 2C7.6 2 4 5.6 4 10c0 7 8 12 8 12s8-5 8-12C20 5.6 16.4 2 12 2zm0 13c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5z",
+                                // 👈 これが中心の円（〇）を限界まで小さく整形した新しい骨格（SVGパス）だ！
+                                path: "M12 2C7.6 2 4 5.6 4 10c0 7 8 12 8 12s8-5 8-12C20 5.6 16.4 2 12 2zm0 11.5c-2 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z",
                                 fillColor: "#FF5252",
                                 fillOpacity: 1,
-                                strokeWeight: 1.5,    // 👈 縁の太さ（1.2〜1.5くらいが小ぶりな形に合うぜ）
+                                strokeWeight: 1.3,    // 👈 縁の太さは細めを維持（これなら1.3がベストだ）
                                 strokeColor: "#FFFFFF",
-                                scale: 1.1,            // 👈 骨格がシュッとした分、scaleは少し小さめの「1.1」が秩序を保つ
+                                scale: 1.1,            // 大きさもスリムな1.1を継承
                                 anchor: new google.maps.Point(12, 22), // 針の先端
                                 labelOrigin: new google.maps.Point(12, 10)
                             };
-
                             const marker = new google.maps.Marker({ 
                                 position: position, 
                                 map: map, 
