@@ -754,29 +754,17 @@
                 let latStr = null; let lngStr = null;
 
                 if (typeOrText === "画像") { textToShow = "📷 写真を記録しました";
+                // ...（iのループの途中、colEの処理から）
                 } else if (typeOrText === "位置情報") { textToShow = "📍 " + colC;
                     if (colE) {
                         const latLngArr = String(colE).split(",");
                         if(latLngArr.length === 2 && map) {
                             latStr = latLngArr[0]; lngStr = latLngArr[1];
+                            
+                            // 💡 正着：システム側の判定（Math.abs...）をすべて削除し、
+                            // スプレッドシートにある座標をそのまま数値化してマーカーにする
                             let latNum = parseFloat(latStr);
                             let lngNum = parseFloat(lngStr);
-
-                            // 💡 Phase Shift: 密度適応型Jitterアルゴリズム
-                            // 1. まず、極めて近い（50cm以内）にピンがあるかチェック
-                            let overlapCount = usedPositions.filter(p => 
-                                Math.abs(p.lat - latNum) < 0.000005 && 
-                                Math.abs(p.lng - lngNum) < 0.000005
-                            ).length;
-
-                            if (overlapCount > 0) {
-                                // 2. 重なっていたら、重なっている数に応じて「螺旋状」にわずかにずらす
-                                // 0.00002（約2メートル）程度の半径で、重なり順に角度を変えて配置
-                                let angle = overlapCount * (Math.PI / 3); // 60度ずつ回転
-                                latNum += Math.cos(angle) * 0.00003;
-                                lngNum += Math.sin(angle) * 0.00003;
-                            }
-                            usedPositions.push({lat: latNum, lng: lngNum}); 
 
                             const position = { lat: latNum, lng: lngNum };
                             const marker = new google.maps.Marker({ 
@@ -785,8 +773,8 @@
                                 title: colC,
                                 icon: {
                                     path: google.maps.SymbolPath.CIRCLE,
-                                    scale: 8, // 👈 ほどよい大きさのドットにする
-                                    fillColor: "#FF5252", // 赤色
+                                    scale: 8,
+                                    fillColor: "#FF5252",
                                     fillOpacity: 1,
                                     strokeWeight: 2,
                                     strokeColor: "#FFFFFF"
@@ -796,6 +784,7 @@
                             bounds.extend(position); hasPins = true;
                         }
                     }
+                }
                 } else { textToShow = typeOrText; }
 
                 let cardHtml = `<div class="memory-card" id="card-${timeId}" ${!isSharedMode ? `onclick="if(isSelectionMode) toggleCardSelection('${date}', '${timeId}')"` : ''}>`;
