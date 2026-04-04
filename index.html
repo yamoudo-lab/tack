@@ -634,6 +634,7 @@
             }
         }
 
+        // ✂️ ここからコピー ✂️
         async function submitData() {
             if (modalMap) { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); }
             if (!currentLat || !currentLng) { 
@@ -641,11 +642,10 @@
                 return; 
             }
 
-            // 💡 Phase Shift: 過去のピンに乗せたかどうかの判定（磁力を15mに拡大）
+            // 💡 Phase Shift: 過去のピンに乗せたかどうかの判定
             let targetMergeDate = null;
             if (window.cardLocations) {
                 for (let loc of window.cardLocations) {
-                    // 判定範囲を 0.00015（約15m）に拡大。少しズレても「結合の意志」として拾う
                     if (Math.abs(loc.lat - currentLat) < 0.00015 && Math.abs(loc.lng - currentLng) < 0.00015) {
                         targetMergeDate = loc.date;
                         break; 
@@ -654,7 +654,6 @@
             }
 
             if (targetMergeDate) {
-                // 📍 重なっている場合の「意思確認」
                 const res = await Swal.fire({
                     title: '📌 過去の記録に重ねますか？',
                     html: `この場所にはすでにカードがあります。<br>過去の記録に<b>追加（結合）</b>しますか？`,
@@ -669,29 +668,33 @@
                 if (res.isConfirmed) {
                     await executeMerge(targetMergeDate);
                     return; 
-                } else {
-                    // 【分離モード】あえて新しく作る場合、視覚的な「吸収」を絶対に防ぐため、30mほど強制的に弾き飛ばす
+                } else if (res.dismiss === Swal.DismissReason.cancel) {
+                    // 「新しく作る」を押した場合のみ、強制的に弾き飛ばす
                     currentLat += 0.0003;
                     currentLng -= 0.0003;
+                } else {
+                    // 枠外をタップして閉じた場合は、誤爆防止で処理を中断する
+                    return; 
                 }
             }
 
             const btn = document.querySelector('#input-modal .btn-submit'); 
             btn.innerText = "Uploading..."; btn.disabled = true; 
             
-            // 👇 (この下は既存の try { ... } 処理が続く)
-            
             try {
                 const memoText = document.getElementById('memo-input').value; const gpsText = `${currentLat},${currentLng}`;
                 
-                const uploadPromises = stagingFiles.map(async (file, i) => {
-                    let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
-                    let filename = `liff_${Date.now()}_${i}.jpg`;
-                    let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
-                    await storageRef.put(blob);
-                    return await storageRef.getDownloadURL();
-                });
-                let uploadedUrls = await Promise.all(uploadPromises);
+                let uploadedUrls = [];
+                if (stagingFiles.length > 0) {
+                    const uploadPromises = stagingFiles.map(async (file, i) => {
+                        let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
+                        let filename = `liff_${Date.now()}_${i}.jpg`;
+                        let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
+                        await storageRef.put(blob);
+                        return await storageRef.getDownloadURL();
+                    });
+                    uploadedUrls = await Promise.all(uploadPromises);
+                }
 
                 const payload = { userId: targetUserId, source: "liff", memo: memoText, gps: gpsText, images: uploadedUrls };
 
@@ -732,6 +735,7 @@
                 btn.innerText = "送信する"; btn.disabled = false;
             }
         }
+// ✂️ ここまで ✂️
 
         async function deleteMemory(dateStr) {
             const result = await Swal.fire({
