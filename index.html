@@ -855,17 +855,17 @@
                             // ✂️ ここからコピー（847行目付近の const marker = ... の部分を上書き）
                     const position = { lat: latNum, lng: lngNum };
                     
-                    // 💡 白縁（ホワイトアウトライン）のカスタムピンをコードで生成
-                    const pinSvg = {
-                        path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", // ピンの形
-                        fillColor: "#FF5252", // ピンの中身（赤）
-                        fillOpacity: 1,
-                        strokeWeight: 2.5,    // 👈 縁の太さ（白縁を強調するため、少し太めに）
-                        strokeColor: "#FFFFFF", // 👈 ここが念願の「白縁（ホワイトアウトライン）」！
-                        scale: 1.5,            // 👈 ここで全体の大きさを微調整（1.2〜1.8くらいがおすすめ）
-                        anchor: new google.maps.Point(12, 22), // 針の先端を座標に合わせる
-                        labelOrigin: new google.maps.Point(12, 9)
-                    };
+                    // 💡 雫の骨格と中心円はスリムなまま、縁を「黒」に反転
+                            const pinSvg = {
+                                path: "M12 2C7.6 2 4 5.6 4 10c0 7 8 12 8 12s8-5 8-12C20 5.6 16.4 2 12 2zm0 11.5c-2 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z",
+                                fillColor: "#FF5252",
+                                fillOpacity: 1,
+                                strokeWeight: 1.0,    // 👈 縁を細い「1.0」に
+                                strokeColor: "#000000", // 👈 ついに帰還した「黒縁」
+                                scale: 1.1,            
+                                anchor: new google.maps.Point(12, 22), 
+                                labelOrigin: new google.maps.Point(12, 10)
+                            };
 
                     const marker = new google.maps.Marker({ 
                         position: position, 
