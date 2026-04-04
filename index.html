@@ -852,13 +852,21 @@
                             
                             window.cardLocations.push({ date: date, lat: latNum, lng: lngNum });
 
-                            const position = { lat: latNum, lng: lngNum };
+                           const position = { lat: latNum, lng: lngNum };
                             const marker = new google.maps.Marker({ 
-                                position: position, map: map, title: colC,
-                                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: "#FF5252", fillOpacity: 1, strokeWeight: 2, strokeColor: "#FFFFFF" }
+                                position: position, 
+                                map: map, 
+                                title: colC
+                                // 💡 アイコン指定を削除してデフォルトの赤いピンに戻し、当たり判定を復活させる
                             });
+
+                            // ⚡️ 重要：ピンをタップしたら下のカードにジャンプする機能を再接続
+                            marker.addListener("click", () => { 
+                                jumpToCard(date, latStr, lngStr); 
+                            });
+
                             markers.push(marker); 
-                            bounds.extend(position); hasPins = true;
+                            bounds.extend(position); hasPins = true; 
                         }
                     }
                 } else { 
