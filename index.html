@@ -101,6 +101,19 @@
         .selection-mode .memory-card .btn-delete { pointer-events: none; opacity: 0.3; }
 
         #send-multiple-fab { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: #06C755; color: white; padding: 14px 32px; border-radius: 30px; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; cursor: pointer; white-space: nowrap; transition: 0.3s; }
+        /* 削除中の「赤の侵食」スタイル */
+        .memory-card.deleting { 
+            border: 2px solid #ff5252 !important; 
+            background-color: #fff5f5 !important; 
+            opacity: 0.7; 
+            pointer-events: none; /* 二重操作を物理的に封印 */
+        }
+        .thumb-img.deleting { 
+            border: 3px solid #ff5252 !important; 
+            opacity: 0.5; 
+            filter: grayscale(100%); /* 存在が消えかかっている演出 */
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
