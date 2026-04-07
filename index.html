@@ -427,7 +427,8 @@
             document.getElementById('lb-delete-btn').style.display = isSharedMode ? 'none' : 'inline-flex';
         }
 
-        async function deleteSingleImage() {
+        // ✅ 560行目付近をこの形に整える
+async function deleteSingleImage() {
     const result = await Swal.fire({
         title: '写真の切断', 
         text: "この写真1枚だけを削除しますか？", 
@@ -447,7 +448,6 @@
     const cardElement = document.getElementById('card-' + timeId);
     
     if (cardElement) {
-        // ✅ 対象の画像だけを「赤枠・グレースケール」でロック
         const images = cardElement.querySelectorAll('img.thumb-img');
         images.forEach(img => {
             if (img.src === targetUrl) { 
@@ -469,7 +469,7 @@
     } catch (error) { 
         console.error("Delete Error", error);
     }
-}
+} // ← この閉じカッコが抜けていないか確認しろ
 
         function initModalMap(lat, lng) {
             document.getElementById('modal-map-container').style.display = 'block'; 
