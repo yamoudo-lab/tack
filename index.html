@@ -785,7 +785,7 @@
         async function deleteMemory(dateStr) {
             const result = await Swal.fire({
                 title: '投稿の抹消', 
-                text: "このカードを空間から完全に削除しますか？", 
+                text: "このカードを完全に削除しますか？", 
                 icon: 'warning',
                 showCancelButton: true, 
                 confirmButtonColor: '#ff5252', 
@@ -801,7 +801,7 @@
             if (cardElement) {
                 cardElement.classList.add('deleting');
                 const dateEl = cardElement.querySelector('.memory-date');
-                if (dateEl) dateEl.innerHTML = `<span style="color:#ff5252;">🔥 空間から削除中...</span>`;
+                if (dateEl) dateEl.innerHTML = `<span style="color:#ff5252;">削除中...</span>`;
             }
 
             try {
