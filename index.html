@@ -428,39 +428,48 @@
         }
 
         async function deleteSingleImage() {
-            const result = await Swal.fire({
-                title: '写真の削除', text: "現在表示している『この写真1枚だけ』を削除しますか？", icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#06C755', confirmButtonText: '削除する', cancelButtonText: 'やめる'
-            });
-            if (!result.isConfirmed) return;
+    const result = await Swal.fire({
+        title: '写真の切断', 
+        text: "この写真1枚だけを削除しますか？", 
+        icon: 'warning',
+        showCancelButton: true, 
+        confirmButtonColor: '#ff5252', 
+        cancelButtonColor: '#06C755', 
+        confirmButtonText: '削除する', 
+        cancelButtonText: 'やめる'
+    });
+    if (!result.isConfirmed) return;
 
-            const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; 
-            closeLightbox(); 
-            
-            const timeId = new Date(currentLbDate).getTime();
-            const cardElement = document.getElementById('card-' + timeId);
-            if (cardElement) {
-                const images = cardElement.querySelectorAll('img.thumb-img');
-                images.forEach(img => {
-                    if (img.src === targetUrl) { img.style.display = "none"; }
-                });
+    const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; 
+    closeLightbox(); 
+    
+    const timeId = new Date(currentLbDate).getTime();
+    const cardElement = document.getElementById('card-' + timeId);
+    
+    if (cardElement) {
+        // ✅ 対象の画像だけを「赤枠・グレースケール」でロック
+        const images = cardElement.querySelectorAll('img.thumb-img');
+        images.forEach(img => {
+            if (img.src === targetUrl) { 
+                img.classList.add('deleting'); 
             }
+        });
+    }
 
-            Swal.fire({ title: '削除しました', icon: 'success', timer: 1500, showConfirmButton: false });
+    try {
+        const payload = { userId: targetUserId, action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
+        await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
+        
+        const res = await fetch(GAS_URL + "?userId=" + targetUserId);
+        const freshData = await res.json();
+        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
+        renderData(freshData); 
 
-            try {
-                const payload = { userId: targetUserId, action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
-                fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-                    .then(() => fetch(GAS_URL + "?userId=" + targetUserId)) 
-                    .then(res => res.json())
-                    .then(freshData => {
-                        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
-                        renderData(freshData); 
-                    });
-            } catch (error) { 
-                console.error("Delete Error", error);
-            }
-        }
+        Swal.fire({ title: '切断完了', icon: 'success', timer: 1000, showConfirmButton: false });
+    } catch (error) { 
+        console.error("Delete Error", error);
+    }
+}
 
         function initModalMap(lat, lng) {
             document.getElementById('modal-map-container').style.display = 'block'; 
