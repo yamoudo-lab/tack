@@ -13,6 +13,21 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-storage-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-functions-compat.js"></script>
+    
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const errHtml = `<div style="color:#d32f2f; font-size:0.8rem; padding:20px; text-align:left;"><b>🚨 システム異常発生</b><br>${msg}<br>行番号: ${lineNo}</div>`;
+            const loadingEl = document.getElementById('loading');
+            if(loadingEl) loadingEl.innerHTML = errHtml;
+            return false;
+        };
+        window.onunhandledrejection = function(event) {
+            const errHtml = `<div style="color:#d32f2f; font-size:0.8rem; padding:20px; text-align:left;"><b>🚨 通信・同期異常</b><br>${event.reason}</div>`;
+            const loadingEl = document.getElementById('loading');
+            if(loadingEl) loadingEl.innerHTML = errHtml;
+        };
+    </script>
+
     <style>
         body, html { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; background-color: #f4f7f9; }
         #map-section { flex: 0 0 45%; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
@@ -110,8 +125,8 @@
             pointer-events: none; 
         }
         .thumb-img.deleting { 
-            border: 4px solid #ff5252 !important; /* 枠を太くし、赤を強調 */
-            opacity: 0.6; /* グレーにはせず、少し薄くするだけ */
+            border: 4px solid #ff5252 !important; 
+            opacity: 0.6; 
             pointer-events: none;
         }
     </style>
@@ -194,7 +209,7 @@
         
         let isSelectionMode = false;
         let selectedMemories = [];
-        let deletingUrls = []; // 👈 これを追加：削除進行中の画像URLを記憶する空間
+        let deletingUrls = []; // 📌 削除進行中の画像URLを記憶する空間
 
         function showLoading(text) { document.getElementById('loading').style.display = 'flex'; document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`; }
         function hideLoading() { document.getElementById('loading').style.display = 'none'; }
@@ -404,7 +419,8 @@
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
                 await Swal.fire({ title: '完了', text: 'メモを保存しました！', icon: 'success', confirmButtonColor: '#06C755' });
-                document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); fetchData(); 
+                document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); 
+                await fetchData(); 
             } catch (error) { 
                 Swal.fire({ title: 'エラー', text: '更新エラー: ' + error, icon: 'error', confirmButtonColor: '#06C755' });
                 hideLoading(); 
@@ -425,6 +441,7 @@
             document.getElementById('lb-delete-btn').style.display = isSharedMode ? 'none' : 'inline-flex';
         }
 
+        // ✅ 単発削除の赤枠ロック
         async function deleteSingleImage() {
             const result = await Swal.fire({
                 title: '写真の切断', 
@@ -466,14 +483,13 @@
                 const freshData = await res.json();
                 localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
                 
-                // 📌 抹消が完了したら、記憶から外して再描画
+                // 📌 抹消が完了したら記憶から外して再描画
                 deletingUrls = deletingUrls.filter(url => url !== targetUrl);
                 renderData(freshData); 
 
                 Swal.fire({ title: '切断完了', icon: 'success', timer: 1000, showConfirmButton: false });
             } catch (error) { 
                 console.error("Delete Error", error);
-                // 📌 失敗した場合も記憶から外し、赤枠を解除する
                 deletingUrls = deletingUrls.filter(url => url !== targetUrl);
                 if (cardElement) {
                     const images = cardElement.querySelectorAll('img.thumb-img');
@@ -483,7 +499,7 @@
                 }
             }
         }
-        
+
         function initModalMap(lat, lng) {
             document.getElementById('modal-map-container').style.display = 'block'; 
             const pos = { lat: lat, lng: lng };
@@ -658,7 +674,7 @@
 
                 closeModal();
                 Swal.fire({ title: '結合完了！', text: '過去のカードに追加しました。', icon: 'success', timer: 2000, showConfirmButton: false });
-                fetchData();
+                await fetchData();
 
             } catch (error) { 
                 Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' });
@@ -765,7 +781,7 @@
             }
         }
 
-        // ✅ 新しい「まるごと削除」（全体削除の赤枠ロック）
+        // ✅ 全体削除の赤枠ロック
         async function deleteMemory(dateStr) {
             const result = await Swal.fire({
                 title: '投稿の抹消', 
@@ -904,7 +920,7 @@
                 if (originalUrls.length > 0) {
                     cardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
                     for(let j=0; j<originalUrls.length; j++) {
-                        // 👇 Phase Shift：削除中のURLなら、再描画されても赤枠を維持する
+                        // 👇 削除進行中のURLなら、赤枠（deletingクラス）を最初から付ける
                         let imgClass = deletingUrls.includes(originalUrls[j]) ? "thumb-img deleting" : "thumb-img";
                         cardHtml += `<img src="${originalUrls[j]}" class="${imgClass}" onclick="openLightbox('${date}', ${j})">`;
                     }
@@ -914,7 +930,7 @@
                 cardHtml += `<div class="btn-container">`;
                 if (latStr && lngStr) {
                     cardHtml += `<button onclick="focusMap(${latStr}, ${lngStr})" class="btn btn-map"><span class="material-symbols-outlined">place</span>マップ</button>`;
-                    cardHtml += `<a href="http://maps.google.com/maps?q=${latStr},${lngStr}" target="_blank" class="btn btn-nav"><span class="material-symbols-outlined">directions_car</span>ナビ開始</a>`;
+                    cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=${latStr},${lngStr}" target="_blank" class="btn btn-nav"><span class="material-symbols-outlined">directions_car</span>ナビ開始</a>`;
                 }
                 
                 if (!isSharedMode) {
@@ -1175,10 +1191,11 @@
                         };
                     }
 
-                    fetchData(); 
+                    // 👇 今回の摩擦解消：fetchDataを確実に監視下に置く
+                    await fetchData(); 
                 } 
             } catch (e) { 
-                Swal.fire({ title: 'エラー', text: "エラー発生: " + e.message, icon: 'error', confirmButtonColor: '#06C755' });
+                Swal.fire({ title: '起動エラー', text: "エラー発生: " + e.message, icon: 'error', confirmButtonColor: '#06C755' });
                 hideLoading(); 
             } 
         }
