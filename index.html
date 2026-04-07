@@ -427,8 +427,31 @@
             }
         }
 
-        function openLightbox(dateStr, index) { currentLbDate = dateStr; currentLbIndex = index; updateLightbox(); document.getElementById('lightbox').style.display = 'flex'; }
-        function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
+        function openLightbox(dateStr, index) { 
+            currentLbDate = dateStr; currentLbIndex = index; updateLightbox(); 
+            document.getElementById('lightbox').style.display = 'flex'; 
+            
+            // 👇 Phase Shift: 「戻る」ボタンの生贄としてダミー履歴をプッシュする
+            history.pushState({ modal: 'lightbox' }, '', '#lightbox');
+        }
+        
+        function closeLightbox(fromPopState = false) { 
+            document.getElementById('lightbox').style.display = 'none'; 
+            
+            // 👇 ✕ボタンで手動で閉じた場合は、ダミー履歴を自ら回収して辻褄を合わせる
+            if (!fromPopState && window.location.hash === '#lightbox') {
+                history.back();
+            }
+        }
+
+        // 👇 OSの「戻る（スワイプ）」動作を検知して迎撃する
+        window.addEventListener('popstate', function(event) {
+            if (document.getElementById('lightbox').style.display === 'flex') {
+                // 戻るボタンが押されたら、LIFFを閉じるのではなくライトボックスだけを閉じる
+                closeLightbox(true);
+            }
+        });
+
         function changeImage(step) {
             const urls = window.galleryData[currentLbDate]; currentLbIndex += step;
             if (currentLbIndex < 0) currentLbIndex = urls.length - 1; if (currentLbIndex >= urls.length) currentLbIndex = 0; updateLightbox();
