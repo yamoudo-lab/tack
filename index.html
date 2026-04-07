@@ -101,6 +101,7 @@
         .selection-mode .memory-card .btn-delete { pointer-events: none; opacity: 0.3; }
 
         #send-multiple-fab { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: #06C755; color: white; padding: 14px 32px; border-radius: 30px; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; cursor: pointer; white-space: nowrap; transition: 0.3s; }
+        
         /* 削除中の「赤の侵食」スタイル */
         .memory-card.deleting { 
             border: 2px solid #ff5252 !important; 
@@ -198,14 +199,12 @@
         function showLoading(text) { document.getElementById('loading').style.display = 'flex'; document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`; }
         function hideLoading() { document.getElementById('loading').style.display = 'none'; }
 
-        // ✅ バグ修正1：カメラの「神経」を確実に繋ぎ直す魔法
         function triggerFileInput(id) {
             let oldInput = document.getElementById(id);
             if (!oldInput) return;
             let newInput = oldInput.cloneNode(true); 
             newInput.value = ''; 
             
-            // 明示的に処理関数を割り当てる（これで絶対に死なない）
             if (id === 'append-photo-trigger') {
                 newInput.onchange = handleAppendPhotos;
             } else {
@@ -280,7 +279,6 @@
                 currentUserId = profile.userId;
             }
             
-            // ✅ バグ修正2：キャッシュ異常によるフリーズを防ぐ強固な防壁
             try {
                 const cachedDataStr = localStorage.getItem("memoryMapCache_" + currentUserId);
                 if (cachedDataStr) {
@@ -427,49 +425,49 @@
             document.getElementById('lb-delete-btn').style.display = isSharedMode ? 'none' : 'inline-flex';
         }
 
-        // ✅ 560行目付近をこの形に整える
-async function deleteSingleImage() {
-    const result = await Swal.fire({
-        title: '写真の切断', 
-        text: "この写真1枚だけを削除しますか？", 
-        icon: 'warning',
-        showCancelButton: true, 
-        confirmButtonColor: '#ff5252', 
-        cancelButtonColor: '#06C755', 
-        confirmButtonText: '削除する', 
-        cancelButtonText: 'やめる'
-    });
-    if (!result.isConfirmed) return;
+        // ✅ 新しい「この写真を消去」（単発削除の赤枠ロック）
+        async function deleteSingleImage() {
+            const result = await Swal.fire({
+                title: '写真の切断', 
+                text: "この写真1枚だけを削除しますか？", 
+                icon: 'warning',
+                showCancelButton: true, 
+                confirmButtonColor: '#ff5252', 
+                cancelButtonColor: '#06C755', 
+                confirmButtonText: '削除する', 
+                cancelButtonText: 'やめる'
+            });
+            if (!result.isConfirmed) return;
 
-    const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; 
-    closeLightbox(); 
-    
-    const timeId = new Date(currentLbDate).getTime();
-    const cardElement = document.getElementById('card-' + timeId);
-    
-    if (cardElement) {
-        const images = cardElement.querySelectorAll('img.thumb-img');
-        images.forEach(img => {
-            if (img.src === targetUrl) { 
-                img.classList.add('deleting'); 
+            const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; 
+            closeLightbox(); 
+            
+            const timeId = new Date(currentLbDate).getTime();
+            const cardElement = document.getElementById('card-' + timeId);
+            
+            if (cardElement) {
+                const images = cardElement.querySelectorAll('img.thumb-img');
+                images.forEach(img => {
+                    if (img.src === targetUrl) { 
+                        img.classList.add('deleting'); 
+                    }
+                });
             }
-        });
-    }
 
-    try {
-        const payload = { userId: targetUserId, action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
-        await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-        
-        const res = await fetch(GAS_URL + "?userId=" + targetUserId);
-        const freshData = await res.json();
-        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
-        renderData(freshData); 
+            try {
+                const payload = { userId: targetUserId, action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
+                await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
+                
+                const res = await fetch(GAS_URL + "?userId=" + targetUserId);
+                const freshData = await res.json();
+                localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
+                renderData(freshData); 
 
-        Swal.fire({ title: '切断完了', icon: 'success', timer: 1000, showConfirmButton: false });
-    } catch (error) { 
-        console.error("Delete Error", error);
-    }
-} // ← この閉じカッコが抜けていないか確認しろ
+                Swal.fire({ title: '切断完了', icon: 'success', timer: 1000, showConfirmButton: false });
+            } catch (error) { 
+                console.error("Delete Error", error);
+            }
+        }
 
         function initModalMap(lat, lng) {
             document.getElementById('modal-map-container').style.display = 'block'; 
@@ -565,7 +563,6 @@ async function deleteSingleImage() {
             stagingFiles.forEach((file, index) => {
                 const box = document.createElement('div'); box.className = 'preview-box';
                 
-                // 👇 ここがPhase Shift！ FileReaderを捨て、軽量なObjectURLに切り替える
                 const img = document.createElement('img'); 
                 img.src = URL.createObjectURL(file);
                 
@@ -614,7 +611,6 @@ async function deleteSingleImage() {
             }
         }
 
-        // 🛠 結合エンジン
         async function executeMerge(targetDate) {
             const btn = document.querySelector('#input-modal .btn-submit'); 
             btn.innerText = "Merging..."; btn.disabled = true; 
@@ -656,7 +652,6 @@ async function deleteSingleImage() {
             }
         }
 
-        // ✂️ ここからコピー ✂️
         async function submitData() {
             if (modalMap) { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); }
             if (!currentLat || !currentLng) { 
@@ -664,7 +659,6 @@ async function deleteSingleImage() {
                 return; 
             }
 
-            // 💡 Phase Shift: 過去のピンに乗せたかどうかの判定
             let targetMergeDate = null;
             if (window.cardLocations) {
                 for (let loc of window.cardLocations) {
@@ -691,11 +685,9 @@ async function deleteSingleImage() {
                     await executeMerge(targetMergeDate);
                     return; 
                 } else if (res.dismiss === Swal.DismissReason.cancel) {
-                    // 「新しく作る」を押した場合のみ、強制的に弾き飛ばす
                     currentLat += 0.0003;
                     currentLng -= 0.0003;
                 } else {
-                    // 枠外をタップして閉じた場合は、誤爆防止で処理を中断する
                     return; 
                 }
             }
@@ -757,50 +749,46 @@ async function deleteSingleImage() {
                 btn.innerText = "送信する"; btn.disabled = false;
             }
         }
-// ✂️ ここまで ✂️
 
+        // ✅ 新しい「まるごと削除」（全体削除の赤枠ロック）
         async function deleteMemory(dateStr) {
-    const result = await Swal.fire({
-        title: '投稿の抹消', 
-        text: "このカードを空間から完全に削除しますか？", 
-        icon: 'warning',
-        showCancelButton: true, 
-        confirmButtonColor: '#ff5252', 
-        cancelButtonColor: '#06C755', 
-        confirmButtonText: '削除する', 
-        cancelButtonText: 'やめる'
-    });
-    if (!result.isConfirmed) return;
+            const result = await Swal.fire({
+                title: '投稿の抹消', 
+                text: "このカードを空間から完全に削除しますか？", 
+                icon: 'warning',
+                showCancelButton: true, 
+                confirmButtonColor: '#ff5252', 
+                cancelButtonColor: '#06C755', 
+                confirmButtonText: '削除する', 
+                cancelButtonText: 'やめる'
+            });
+            if (!result.isConfirmed) return;
 
-    const timeId = new Date(dateStr).getTime();
-    const cardElement = document.getElementById('card-' + timeId);
-    
-    if (cardElement) {
-        // ✅ 追加時（緑）の逆：赤い枠でロックし、「削除中」を明示する
-        cardElement.classList.add('deleting');
-        const dateEl = cardElement.querySelector('.memory-date');
-        if (dateEl) dateEl.innerHTML = `<span style="color:#ff5252;">🔥 空間から削除中...</span>`;
-    }
+            const timeId = new Date(dateStr).getTime();
+            const cardElement = document.getElementById('card-' + timeId);
+            
+            if (cardElement) {
+                cardElement.classList.add('deleting');
+                const dateEl = cardElement.querySelector('.memory-date');
+                if (dateEl) dateEl.innerHTML = `<span style="color:#ff5252;">🔥 空間から削除中...</span>`;
+            }
 
-    try {
-        const payload = { userId: targetUserId, action: "delete", date: dateStr };
-        // 裏側でじっくり削除処理を走らせる
-        await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-        
-        // 完了後に再取得して画面を更新
-        const res = await fetch(GAS_URL + "?userId=" + targetUserId);
-        const freshData = await res.json();
-        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
-        renderData(freshData);
-        
-        Swal.fire({ title: '抹消完了', icon: 'success', timer: 1000, showConfirmButton: false });
-    } catch (error) { 
-        console.error("Delete Error", error);
-        if (cardElement) cardElement.classList.remove('deleting'); // 失敗時はロック解除
-    }
-}
+            try {
+                const payload = { userId: targetUserId, action: "delete", date: dateStr };
+                await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
+                
+                const res = await fetch(GAS_URL + "?userId=" + targetUserId);
+                const freshData = await res.json();
+                localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
+                renderData(freshData);
+                
+                Swal.fire({ title: '抹消完了', icon: 'success', timer: 1000, showConfirmButton: false });
+            } catch (error) { 
+                console.error("Delete Error", error);
+                if (cardElement) cardElement.classList.remove('deleting'); 
+            }
+        }
 
-        // ✂️ ここからコピー ✂️
         function renderData(data) {
             const listContainer = document.getElementById('memory-list');
             listContainer.innerHTML = ''; 
@@ -840,7 +828,6 @@ async function deleteSingleImage() {
                             let latNum = parseFloat(latStr);
                             let lngNum = parseFloat(lngStr);
                             
-                            // 💡 視覚的吸収の防止（約30mずらす）
                             let overlapCount = window.cardLocations.filter(p => Math.abs(p.lat - latNum) < 0.0001 && Math.abs(p.lng - lngNum) < 0.0001).length;
                             if (overlapCount > 0) {
                                 let angle = overlapCount * (Math.PI / 3); 
@@ -850,36 +837,33 @@ async function deleteSingleImage() {
                             
                             window.cardLocations.push({ date: date, lat: latNum, lng: lngNum });
 
-                            // ✂️ ここからコピー（847行目付近の const marker = ... の部分を上書き）
-                    const position = { lat: latNum, lng: lngNum };
-                    
-                    // 💡 輪郭を「深い赤」に。馴染みつつ締まる、大人のスリムピン。
+                            const position = { lat: latNum, lng: lngNum };
+                            
                             const pinSvg = {
                                 path: "M12 2C7.6 2 4 5.6 4 10c0 7 8 12 8 12s8-5 8-12C20 5.6 16.4 2 12 2zm0 11.5c-2 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z",
-                                fillColor: "#FF5252",   // 中心は鮮やかな赤
+                                fillColor: "#FF5252",   
                                 fillOpacity: 1,
-                                strokeWeight: 1.5,      // 👈 少しだけ太さを持たせて「深み」を見せる
-                                strokeColor: "#A00000", // 👈 これが「深い赤」。黒より柔らかく、白より硬い。
+                                strokeWeight: 1.5,      
+                                strokeColor: "#A00000", 
                                 scale: 1.1,            
                                 anchor: new google.maps.Point(12, 22), 
                                 labelOrigin: new google.maps.Point(12, 10)
                             };
 
-                    const marker = new google.maps.Marker({ 
-                        position: position, 
-                        map: map, 
-                        title: colC,
-                        icon: pinSvg // 生成した白縁ピンをセット
-                    });
+                            const marker = new google.maps.Marker({ 
+                                position: position, 
+                                map: map, 
+                                title: colC,
+                                icon: pinSvg
+                            });
 
-                    // ⚡️ ピンをタップしたら下のカードにジャンプする機能
-                    marker.addListener("click", () => { 
-                        jumpToCard(date, latStr, lngStr); 
-                    });
+                            marker.addListener("click", () => { 
+                                jumpToCard(date, latStr, lngStr); 
+                            });
 
-                    markers.push(marker); 
-                    bounds.extend(position); hasPins = true;
-                        } // 👈 874行目、ここまでのカッコを含めて消す
+                            markers.push(marker); 
+                            bounds.extend(position); hasPins = true;
+                        }
                     }
                 } else { 
                     textToShow = typeOrText; 
@@ -949,8 +933,40 @@ async function deleteSingleImage() {
                 }
             }
         }
-// ✂️ ここまでコピー ✂️
         
+        function initMap() { 
+            map = new google.maps.Map(document.getElementById("map"), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 5, disableDefaultUI: true, zoomControl: true, fullscreenControl: true }); 
+        }
+        
+        async function fetchData() {
+            const cacheKey = "memoryMapCache_" + targetUserId;
+            const cachedDataStr = localStorage.getItem(cacheKey);
+            if (cachedDataStr) {
+                try {
+                    const cachedData = JSON.parse(cachedDataStr);
+                    renderData(cachedData); 
+                } catch(e) {}
+                hideLoading();
+            }
+
+            try {
+                const response = await fetch(GAS_URL + "?userId=" + targetUserId);
+                const freshData = await response.json();
+
+                if (JSON.stringify(freshData) !== cachedDataStr) {
+                    localStorage.setItem(cacheKey, JSON.stringify(freshData));
+                    renderData(freshData); 
+                    hideLoading();
+                }
+            } catch (error) {
+                if (!cachedDataStr) {
+                    document.getElementById('loading').innerText = "通信エラーが発生しました: " + error;
+                } else {
+                    console.log("バックグラウンド通信エラー:", error);
+                }
+            }
+        }
+
         document.getElementById('memo-input').addEventListener('focus', function() {
             setTimeout(() => {
                 this.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1137,11 +1153,8 @@ async function deleteSingleImage() {
                         modeBtn.style.borderColor = "#06C755";
                         modeBtn.style.pointerEvents = "auto"; 
                         
-                        // ボタンを押したら、TACKの「LINE公式アカウント（友だち追加画面）」へワープ！
                         modeBtn.onclick = function() {
-                            // TACK公式のベーシックID（@931bwuek）を指定して、友だち追加画面を開かせる
                             window.location.href = "https://line.me/R/ti/p/@931bwuek"; 
-                            // ※もしLINE公式の管理画面で「https://lin.ee/〜」の短い友だち追加URLを発行していれば、それに差し替えてもOKだ。
                         };
                     }
 
