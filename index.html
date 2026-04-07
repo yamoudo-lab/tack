@@ -815,11 +815,11 @@
             }
         }
 
-        // ✅ 全体削除の赤枠ロック
+        // ✅ 全体削除の即時物理破壊ロック
         async function deleteMemory(dateStr) {
             const result = await Swal.fire({
                 title: '投稿の抹消', 
-                text: "このカードを完全に削除しますか？", 
+                text: "このカードを空間から完全に削除しますか？", 
                 icon: 'warning',
                 showCancelButton: true, 
                 confirmButtonColor: '#ff5252', 
@@ -835,17 +835,33 @@
             if (cardElement) {
                 cardElement.classList.add('deleting');
                 const dateEl = cardElement.querySelector('.memory-date');
-                if (dateEl) dateEl.innerHTML = `<span style="color:#ff5252;">削除中...</span>`;
+                if (dateEl) dateEl.innerHTML = `<span style="color:#ff5252;">🔥 空間から抹消中...</span>`;
             }
 
             try {
                 const payload = { userId: targetUserId, action: "delete", date: dateStr };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
-                const res = await fetch(GAS_URL + "?userId=" + targetUserId);
-                const freshData = await res.json();
-                localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
-                renderData(freshData);
+                // 📌 Phase Shift: 画面全体の再描画を待たず、このカードだけをアニメーションで即座に消滅させる
+                if (cardElement) {
+                    cardElement.style.transition = "opacity 0.4s ease, transform 0.4s ease, height 0.4s ease, padding 0.4s ease, margin 0.4s ease";
+                    cardElement.style.opacity = "0";
+                    cardElement.style.transform = "scale(0.9)";
+                    cardElement.style.height = "0px";
+                    cardElement.style.padding = "0px";
+                    cardElement.style.margin = "0px";
+                    cardElement.style.border = "none";
+                    setTimeout(() => cardElement.remove(), 400); // 完全にDOMから削り取る
+                }
+
+                // 裏側で最新データを取得し、ローカルキャッシュだけを更新（再描画による幽霊復活を防ぐ）
+                fetch(GAS_URL + "?userId=" + targetUserId)
+                    .then(res => res.json())
+                    .then(freshData => {
+                        // 念のため、取得したデータから対象の日付をフロントエンドで弾いておく（完全防壁）
+                        const safeData = freshData.filter(row => row[0] !== dateStr);
+                        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(safeData));
+                    });
                 
                 Swal.fire({ title: '抹消完了', icon: 'success', timer: 1000, showConfirmButton: false });
             } catch (error) { 
