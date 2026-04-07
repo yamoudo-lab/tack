@@ -751,69 +751,45 @@
 // ✂️ ここまで ✂️
 
         async function deleteMemory(dateStr) {
-            const result = await Swal.fire({
-                title: '投稿の削除', text: "この投稿をまるごと削除しますか？（※元に戻せません）", icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#06C755', confirmButtonText: '削除する', cancelButtonText: 'やめる'
-            });
-            if (!result.isConfirmed) return;
+    const result = await Swal.fire({
+        title: '投稿の抹消', 
+        text: "このカードを空間から完全に削除しますか？", 
+        icon: 'warning',
+        showCancelButton: true, 
+        confirmButtonColor: '#ff5252', 
+        cancelButtonColor: '#06C755', 
+        confirmButtonText: '削除する', 
+        cancelButtonText: 'やめる'
+    });
+    if (!result.isConfirmed) return;
 
-            const timeId = new Date(dateStr).getTime();
-            const cardElement = document.getElementById('card-' + timeId);
-            if (cardElement) {
-                cardElement.style.transition = "opacity 0.3s ease, transform 0.3s ease";
-                cardElement.style.opacity = "0";
-                cardElement.style.transform = "scale(0.95)";
-                setTimeout(() => cardElement.style.display = "none", 300);
-            }
+    const timeId = new Date(dateStr).getTime();
+    const cardElement = document.getElementById('card-' + timeId);
+    
+    if (cardElement) {
+        // ✅ 追加時（緑）の逆：赤い枠でロックし、「削除中」を明示する
+        cardElement.classList.add('deleting');
+        const dateEl = cardElement.querySelector('.memory-date');
+        if (dateEl) dateEl.innerHTML = `<span style="color:#ff5252;">🔥 空間から削除中...</span>`;
+    }
 
-            Swal.fire({ title: '削除しました', icon: 'success', timer: 1500, showConfirmButton: false });
-
-            try {
-                const payload = { userId: targetUserId, action: "delete", date: dateStr };
-                fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-                    .then(() => fetch(GAS_URL + "?userId=" + targetUserId))
-                    .then(res => res.json())
-                    .then(freshData => {
-                        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
-                        renderData(freshData); 
-                    });
-            } catch (error) { 
-                console.error("Delete Error", error);
-            }
-        }
-
-        function initMap() { 
-            map = new google.maps.Map(document.getElementById("map"), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 5, disableDefaultUI: true, zoomControl: true, fullscreenControl: true }); 
-        }
+    try {
+        const payload = { userId: targetUserId, action: "delete", date: dateStr };
+        // 裏側でじっくり削除処理を走らせる
+        await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
         
-        async function fetchData() {
-            const cacheKey = "memoryMapCache_" + targetUserId;
-            const cachedDataStr = localStorage.getItem(cacheKey);
-            if (cachedDataStr) {
-                try {
-                    const cachedData = JSON.parse(cachedDataStr);
-                    renderData(cachedData); 
-                } catch(e) {}
-                hideLoading();
-            }
-
-            try {
-                const response = await fetch(GAS_URL + "?userId=" + targetUserId);
-                const freshData = await response.json();
-
-                if (JSON.stringify(freshData) !== cachedDataStr) {
-                    localStorage.setItem(cacheKey, JSON.stringify(freshData));
-                    renderData(freshData); 
-                    hideLoading();
-                }
-            } catch (error) {
-                if (!cachedDataStr) {
-                    document.getElementById('loading').innerText = "通信エラーが発生しました: " + error;
-                } else {
-                    console.log("バックグラウンド通信エラー:", error);
-                }
-            }
-        }
+        // 完了後に再取得して画面を更新
+        const res = await fetch(GAS_URL + "?userId=" + targetUserId);
+        const freshData = await res.json();
+        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
+        renderData(freshData);
+        
+        Swal.fire({ title: '抹消完了', icon: 'success', timer: 1000, showConfirmButton: false });
+    } catch (error) { 
+        console.error("Delete Error", error);
+        if (cardElement) cardElement.classList.remove('deleting'); // 失敗時はロック解除
+    }
+}
 
         // ✂️ ここからコピー ✂️
         function renderData(data) {
