@@ -847,7 +847,9 @@
                 if (originalUrls.length > 0) {
                     cardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
                     for(let j=0; j<originalUrls.length; j++) {
-                        cardHtml += `<img src="${originalUrls[j]}" class="thumb-img" onclick="openLightbox('${date}', ${j})">`;
+                        // 👇 Phase Shift：削除中のURLなら、再描画されても赤枠を維持する
+                        let imgClass = deletingUrls.includes(originalUrls[j]) ? "thumb-img deleting" : "thumb-img";
+                        cardHtml += `<img src="${originalUrls[j]}" class="${imgClass}" onclick="openLightbox('${date}', ${j})">`;
                     }
                     cardHtml += `</div>`;
                 }
