@@ -713,7 +713,7 @@
                 let cardHtml = `<div class="memory-card" id="card-${timeId}" ${!isSharedMode ? `onclick="if(isSelectionMode) toggleCardSelection('${date}', '${timeId}')"` : ''}>`;
                 if (!isSharedMode) {
                     cardHtml += `<input type="checkbox" id="cb-${timeId}" class="select-checkbox" style="display:none;">`;
-                    cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete"><span class="material-symbols-outlined">delete</span>抹消</button>`;
+                    cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete"><span class="material-symbols-outlined">delete</span>削除</button>`;
                 }
                 
                 // 📌 レイヤーインジケーター（色付き丸）を追加
