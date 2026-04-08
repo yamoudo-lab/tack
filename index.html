@@ -33,13 +33,13 @@
         #map-section { flex: 0 0 45%; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
         #map { width: 100%; height: 100%; border: none; }
         
-        #mode-toggle-btn {
+        /* ⚙️ コンソール起動ボタンへ変更 */
+        #settings-btn {
             position: absolute; top: 15px; left: 15px; z-index: 100; background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(5px); color: #555; border: 1px solid #ccc; padding: 8px 15px;
             border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            display: inline-flex; align-items: center; gap: 5px;
+            display: inline-flex; align-items: center; gap: 5px; transition: 0.3s;
         }
-        #mode-toggle-btn.active { background: #06C755; color: white; border-color: #06C755; }
 
         #list-section { flex: 1; overflow-y: auto; padding: 15px 15px 100px 15px; -webkit-overflow-scrolling: touch; }
         #memory-list { display: flex; flex-direction: column; gap: 15px; }
@@ -48,7 +48,15 @@
         .spinner { border: 3px solid rgba(6, 199, 85, 0.2); border-top-color: #06C755; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin-right: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .memory-date { position: absolute; top: 22px; left: 20px; font-size: 0.8rem; color: #888; margin: 0; font-weight: bold; transition: 0.2s; }
+        .memory-date { position: absolute; top: 22px; left: 45px; font-size: 0.8rem; color: #888; margin: 0; font-weight: bold; transition: 0.2s; display: flex; align-items: center;}
+        
+        /* 📌 レイヤーインジケーター（カードの隅の丸） */
+        .layer-dot { position: absolute; top: 22px; left: 20px; width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
+        .layer-dot.red { background-color: #FF5252; }
+        .layer-dot.green { background-color: #06C755; }
+        .layer-dot.blue { background-color: #2196F3; }
+        .layer-dot.mono { background-color: #FFFFFF; border: 2px solid #333; }
+
         .memory-text { font-size: 1rem; line-height: 1.5; margin-bottom: 15px; white-space: pre-wrap; color: #222; }
         .btn-container { display: flex; gap: 10px; flex-wrap: wrap; transition: 0.3s; }
         
@@ -62,7 +70,7 @@
 
         .thumb-img {
             width: 110px; height: 110px; object-fit: cover; border-radius: 10px; border: 1px solid #eee; cursor: pointer; 
-            transition: opacity 0.2s, transform 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.08); flex-shrink: 0; display: block;
+            transition: opacity 0.2s, transform 0.2s, width 0.3s ease, margin 0.3s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.08); flex-shrink: 0; display: block;
         }
         .thumb-img:active { opacity: 0.7; transform: scale(0.98);}
         .fab-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; align-items: flex-end;}
@@ -77,8 +85,24 @@
         .lb-next { right: 0; }
         .lb-counter { position: absolute; bottom: 30px; color: white; font-size: 1rem; font-weight: bold; letter-spacing: 2px;}
         
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px 20px 60px 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; max-height: 90dvh; overflow-y: auto;}
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px 20px 30px 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; max-height: 90dvh; overflow-y: auto;}
+        
+        /* 🎨 カラーピッカー UI */
+        .color-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 5px; padding: 10px 0;}
+        .color-ball { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; transition: 0.2s; border: 3px solid transparent; box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
+        .color-ball.red { background-color: #FF5252; }
+        .color-ball.green { background-color: #06C755; }
+        .color-ball.blue { background-color: #2196F3; }
+        .color-ball.mono { background-color: #FFFFFF; border: 2px solid #333; }
+        .color-ball.active { transform: scale(1.2); border-color: #333; }
+        .color-ball.mono.active { border: 3px solid #06C755; }
+
+        /* ⚙️ フィルターボタンUI */
+        .filter-container { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;}
+        .filter-btn { padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; background: white; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
+        .filter-btn.active { background: #333; color: white; border-color: #333; }
+
         #preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; flex-shrink: 0;}
         .preview-box { aspect-ratio: 1/1; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #ddd; background: #fafafa;}
         .preview-box img { width: 100%; height: 100%; object-fit: cover; }
@@ -107,7 +131,8 @@
         .selection-mode .select-checkbox { display: block; pointer-events: none; }
         .selection-mode .memory-card { padding-left: 50px; cursor: pointer; background-color: #f0fdf4; }
         .selection-mode .memory-card.selected { border: 2px solid #06C755; }
-        .selection-mode .memory-date { left: 50px; } 
+        .selection-mode .layer-dot { left: 45px; }
+        .selection-mode .memory-date { left: 70px; } 
         
         .selection-mode .memory-card img.thumb-img,
         .selection-mode .memory-card .btn-container,
@@ -117,23 +142,13 @@
 
         #send-multiple-fab { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: #06C755; color: white; padding: 14px 32px; border-radius: 30px; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; cursor: pointer; white-space: nowrap; transition: 0.3s; }
         
-        /* 削除中の「赤の侵食」スタイル */
-        .memory-card.deleting { 
-            border: 2px solid #ff5252 !important; 
-            background-color: #fff5f5 !important; 
-            opacity: 0.7; 
-            pointer-events: none; 
-        }
-        .thumb-img.deleting { 
-            border: 4px solid #ff5252 !important; 
-            opacity: 0.6; 
-            pointer-events: none;
-        }
+        .memory-card.deleting { border: 2px solid #ff5252 !important; background-color: #fff5f5 !important; opacity: 0.7; pointer-events: none; }
+        .thumb-img.deleting { border: 4px solid #ff5252 !important; opacity: 0.6; pointer-events: none;}
     </style>
 </head>
 <body>
     <div id="map-section">
-        <button id="mode-toggle-btn" onclick="toggleSelectionMode()"><span class="material-symbols-outlined">checklist</span>複数選択</button>
+        <button id="settings-btn" onclick="openSettings()"><span class="material-symbols-outlined">settings</span> 管理</button>
         <div id="map"></div>
     </div>
     
@@ -151,6 +166,36 @@
         <input type="file" id="append-photo-trigger" accept="image/*" multiple capture="environment" style="display: none;">
     </div>
 
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content" style="gap: 15px;">
+            <h3 style="margin: 0; color: #333; text-align: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;">空間管理</h3>
+
+            <div>
+                <div style="font-size: 0.8rem; color:#888; font-weight:bold; margin-bottom: 10px;">表示レイヤー（フィルター）</div>
+                <div class="filter-container">
+                    <button id="flt-all" class="filter-btn active" onclick="setFilter('all')">全て</button>
+                    <button id="flt-red" class="filter-btn" onclick="setFilter('red')">🔴</button>
+                    <button id="flt-green" class="filter-btn" onclick="setFilter('green')">🟢</button>
+                    <button id="flt-blue" class="filter-btn" onclick="setFilter('blue')">🔵</button>
+                    <button id="flt-mono" class="filter-btn" onclick="setFilter('mono')">⚪️</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <div style="font-size: 0.8rem; color:#888; font-weight:bold; margin-bottom: 5px;">データ整理</div>
+                <button class="action-btn" style="background:#f0f0f0; color:#333; width:100%; display:flex; justify-content:center; align-items:center; gap:5px;" onclick="startSelectionMode()"><span class="material-symbols-outlined">checklist</span> 複数選択モードを開始</button>
+            </div>
+
+            <div style="border-top: 1px solid #eee; padding-top: 15px; margin-top: 10px;">
+                <div style="font-size: 0.8rem; color:#888; font-weight:bold; margin-bottom: 5px;">システム・拡張</div>
+                <button class="action-btn" style="background:none; border:none; color:#555; text-align:left; padding: 10px 0; width:100%; display:flex; justify-content:space-between;" onclick="showLegal()">利用規約 / ポリシー <span class="material-symbols-outlined">chevron_right</span></button>
+                <button class="action-btn" style="background:none; border:none; color:#d32f2f; text-align:left; padding: 10px 0; width:100%; font-weight:bold;" onclick="triggerUpgrade()">👑 TACK Premium (準備中)</button>
+            </div>
+            
+            <button class="action-btn btn-cancel" style="margin-top: 10px;" onclick="closeSettings()">閉じる</button>
+        </div>
+    </div>
+
     <div id="lightbox">
         <div class="lb-close" onclick="closeLightbox()">×</div>
         <button class="lb-delete" id="lb-delete-btn" onclick="deleteSingleImage()"><span class="material-symbols-outlined">delete</span>この写真を消去</button>
@@ -160,6 +205,14 @@
 
     <div id="input-modal" class="modal-overlay">
         <div class="modal-content">
+            <div style="text-align: center; font-size: 0.8rem; font-weight: bold; color: #888; margin-top: -5px;">レイヤーを選択</div>
+            <div class="color-selector" id="input-colors">
+                <div class="color-ball red active" onclick="selectLayer('input', 'red')"></div>
+                <div class="color-ball green" onclick="selectLayer('input', 'green')"></div>
+                <div class="color-ball blue" onclick="selectLayer('input', 'blue')"></div>
+                <div class="color-ball mono" onclick="selectLayer('input', 'mono')"></div>
+            </div>
+
             <div id="preview-grid"></div>
             <div id="modal-map-container"><div id="modal-map"></div><div class="center-pin"><span class="material-symbols-outlined" style="font-size: 36px; color: #d32f2f;">location_on</span></div><button class="recenter-btn" onclick="getGps(true)"><span class="material-symbols-outlined">my_location</span></button></div>
             <div class="gps-container"><span id="gps-status">⏳ 位置情報を準備中...</span></div>
@@ -170,8 +223,14 @@
 
     <div id="edit-modal" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="margin: 0; color: #06C755; text-align: center;">メモを編集</h3>
-            <textarea id="edit-memo-input" style="height: 150px;" placeholder="メモを書き直す..."></textarea>
+            <h3 style="margin: 0; color: #333; text-align: center; font-size:1.1rem;">メモとレイヤーを編集</h3>
+            <div class="color-selector" id="edit-colors">
+                <div class="color-ball red" onclick="selectLayer('edit', 'red')"></div>
+                <div class="color-ball green" onclick="selectLayer('edit', 'green')"></div>
+                <div class="color-ball blue" onclick="selectLayer('edit', 'blue')"></div>
+                <div class="color-ball mono" onclick="selectLayer('edit', 'mono')"></div>
+            </div>
+            <textarea id="edit-memo-input" style="height: 120px;" placeholder="メモを書き直す..."></textarea>
             <button class="action-btn btn-submit" onclick="submitEdit()">上書き保存</button><button class="action-btn btn-cancel" onclick="closeEditModal()">キャンセル</button>
         </div>
     </div>
@@ -204,35 +263,81 @@
         let isSharedMode = false; 
         let filterIds = [];     
 
-        window.galleryData = {}; window.memoData = {};
+        window.galleryData = {}; window.memoData = {}; window.layerData = {};
         let currentLbDate = ""; let currentLbIndex = 0; let currentEditDate = ""; let currentAppendDate = "";
         
+        // 🎨 Phase 2 状態管理
         let isSelectionMode = false;
         let selectedMemories = [];
-        let deletingUrls = []; // 📌 削除進行中の画像URLを記憶する空間
+        let deletingUrls = [];
+        let currentInputLayer = "red";
+        let currentEditLayer = "red";
+        let currentFilter = "all";
 
         function showLoading(text) { document.getElementById('loading').style.display = 'flex'; document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`; }
         function hideLoading() { document.getElementById('loading').style.display = 'none'; }
 
-        function triggerFileInput(id) {
-            let oldInput = document.getElementById(id);
-            if (!oldInput) return;
-            let newInput = oldInput.cloneNode(true); 
-            newInput.value = ''; 
-            
-            if (id === 'append-photo-trigger') {
-                newInput.onchange = handleAppendPhotos;
-            } else {
-                newInput.onchange = handleDirectFiles;
+        // ⚙️ コンソール管理
+        function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
+        function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+        
+        function showLegal() {
+            Swal.fire({
+                title: '規約とポリシー',
+                html: 'TACK 空間メモの<a href="#" style="color:#06C755;">利用規約</a>および<a href="#" style="color:#06C755;">プライバシーポリシー</a>は現在準備中です。',
+                icon: 'info', confirmButtonColor: '#333'
+            });
+        }
+
+        // 🎨 レイヤー選択ロジック
+        function selectLayer(context, color) {
+            if (context === 'input') {
+                currentInputLayer = color;
+                document.querySelectorAll('#input-colors .color-ball').forEach(el => el.classList.remove('active'));
+                document.querySelector(`#input-colors .color-ball.${color}`).classList.add('active');
+            } else if (context === 'edit') {
+                currentEditLayer = color;
+                document.querySelectorAll('#edit-colors .color-ball').forEach(el => el.classList.remove('active'));
+                document.querySelector(`#edit-colors .color-ball.${color}`).classList.add('active');
             }
+        }
+
+        // 🔍 フィルターロジック
+        function setFilter(color) {
+            currentFilter = color;
+            document.querySelectorAll('.filter-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`flt-${color}`).classList.add('active');
             
-            oldInput.parentNode.replaceChild(newInput, oldInput); 
-            newInput.click(); 
+            // ローカルキャッシュから再描画
+            const cachedDataStr = localStorage.getItem("memoryMapCache_" + targetUserId);
+            if (cachedDataStr) { renderData(JSON.parse(cachedDataStr)); }
+            closeSettings();
+        }
+
+        // 📍 動的ピン生成エンジン (Phase Shift)
+        function getPinSvg(layerColor) {
+            let fill = "#FF5252", stroke = "#A00000", weight = 1.5;
+            if (layerColor === "green") { fill = "#06C755"; stroke = "#008000"; }
+            else if (layerColor === "blue") { fill = "#2196F3"; stroke = "#0D47A1"; }
+            else if (layerColor === "mono") { fill = "#FFFFFF"; stroke = "#111111"; weight = 2.5; }
+
+            return {
+                path: "M12 2C7.6 2 4 5.6 4 10c0 7 8 12 8 12s8-5 8-12C20 5.6 16.4 2 12 2zm0 11.5c-2 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z",
+                fillColor: fill, fillOpacity: 1, strokeWeight: weight, strokeColor: stroke, scale: 1.1,
+                anchor: new google.maps.Point(12, 22), labelOrigin: new google.maps.Point(12, 10)
+            };
+        }
+
+        function triggerFileInput(id) {
+            let oldInput = document.getElementById(id); if (!oldInput) return;
+            let newInput = oldInput.cloneNode(true); newInput.value = ''; 
+            if (id === 'append-photo-trigger') { newInput.onchange = handleAppendPhotos; } 
+            else { newInput.onchange = handleDirectFiles; }
+            oldInput.parentNode.replaceChild(newInput, oldInput); newInput.click(); 
         }
 
         function autoLink(text) {
-            if (!text) return "";
-            let linked = text;
+            if (!text) return ""; let linked = text;
             linked = linked.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #007bff; text-decoration: underline; word-break: break-all;">$1</a>');
             linked = linked.replace(/(0\d{1,4}-\d{1,4}-\d{3,4})/g, '<a href="tel:$1" style="color: #007bff; text-decoration: underline;">$1</a>');
             linked = linked.replace(/\*\*(.*?)\*\*/g, '<span style="color: #06C755; font-weight: bold; font-size: 1.1em;">$1</span>');
@@ -241,13 +346,9 @@
         }
         
         function toggleMemo(id) {
-            const textDiv = document.getElementById(`memo-${id}`);
-            const btn = document.getElementById(`rmbtn-${id}`);
-            if (textDiv.classList.contains('collapsed')) {
-                textDiv.classList.remove('collapsed'); btn.innerText = "▲ 閉じる";
-            } else {
-                textDiv.classList.add('collapsed'); btn.innerText = "▼ 続きを読む";
-            }
+            const textDiv = document.getElementById(`memo-${id}`); const btn = document.getElementById(`rmbtn-${id}`);
+            if (textDiv.classList.contains('collapsed')) { textDiv.classList.remove('collapsed'); btn.innerText = "▲ 閉じる"; } 
+            else { textDiv.classList.add('collapsed'); btn.innerText = "▼ 続きを読む"; }
         }
 
         function jumpToCard(dateStr, lat, lng) {
@@ -256,83 +357,40 @@
         }
         function focusMap(lat, lng) { if (map && lat && lng) { map.panTo({lat: parseFloat(lat), lng: parseFloat(lng)}); map.setZoom(16); } }
 
-        function triggerAppendPhoto(dateStr) { 
-            currentAppendDate = dateStr; 
-            triggerFileInput('append-photo-trigger'); 
-        }
+        function triggerAppendPhoto(dateStr) { currentAppendDate = dateStr; triggerFileInput('append-photo-trigger'); }
 
         async function checkPremiumStatus(uid) {
-            try {
-                const doc = await db.collection("users").doc(uid).get();
-                if (doc.exists && doc.data().isPremium === true) {
-                    isPremium = true;
-                }
-            } catch (error) {
-                console.log("Premium check failed:", error);
-            }
+            try { const doc = await db.collection("users").doc(uid).get(); if (doc.exists && doc.data().isPremium === true) isPremium = true; } 
+            catch (error) { console.log("Premium check failed"); }
         }
 
         async function triggerUpgrade() {
             if (isSharedMode) return;
-            Swal.fire({
-                title: '👑 TACK Premium',
-                html: '現在、プレミアム機能は正式リリースに向けて<br><b>最終準備中</b>です！<br><br>もうしばらくお待ちください🚀',
-                icon: 'info',
-                confirmButtonColor: '#06C755',
-                confirmButtonText: '楽しみに待つ！',
-                heightAuto: false
-            });
+            Swal.fire({ title: '👑 TACK Premium', html: '現在、プレミアム機能は正式リリースに向けて<br><b>最終準備中</b>です！', icon: 'info', confirmButtonColor: '#06C755', confirmButtonText: '楽しみに待つ！', heightAuto: false });
         }
             
         async function checkPinLimitAndTrigger(inputId) {
-            if (isSharedMode) {
-                Swal.fire({ title: 'ゲストモード', text: 'ここは他の人のマップです。', icon: 'info' });
-                return;
-            }
-            if (!currentUserId && liff.isLoggedIn()) {
-                const profile = await liff.getProfile();
-                currentUserId = profile.userId;
-            }
+            if (isSharedMode) { Swal.fire({ title: 'ゲストモード', text: 'ここは他の人のマップです。', icon: 'info' }); return; }
+            if (!currentUserId && liff.isLoggedIn()) { const profile = await liff.getProfile(); currentUserId = profile.userId; }
             
             try {
                 const cachedDataStr = localStorage.getItem("memoryMapCache_" + currentUserId);
                 if (cachedDataStr) {
                     const data = JSON.parse(cachedDataStr);
-                    if (Array.isArray(data)) {
-                        currentPinCount = data.filter(row => row && row[0] !== "" && row[0] !== "日付").length;
-                    }
+                    if (Array.isArray(data)) currentPinCount = data.filter(row => row && row[0] !== "" && row[0] !== "日付").length;
                 }
-            } catch (e) {
-                console.log("キャッシュが異常なためスキップします");
-            }
+            } catch (e) {}
 
             if (!isPremium && currentPinCount >= 20) {
-                const result = await Swal.fire({
-                    title: '📌 マップの限界に到達',
-                    html: `無料プランの20個を使い切りました。<br><br><b>TACK Premium</b>へアップグレードしますか？`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#06C755',
-                    confirmButtonText: '🚀 アップグレードする',
-                    cancelButtonText: '今はやめる',
-                    heightAuto: false
-                });
+                const result = await Swal.fire({ title: '📌 空間の限界', html: `無料プランの20個を使い切りました。<br><br><b>TACK Premium</b>へ拡張しますか？`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#06C755', confirmButtonText: '🚀 拡張する', cancelButtonText: '今はやめる', heightAuto: false });
                 if (result.isConfirmed) {
-                    if (!currentUserId) {
-                        Swal.fire({ title: '認証エラー', text: 'LINE IDを取得できませんでした。アプリを再起動してください。', icon: 'error' });
-                        return;
-                    }
+                    if (!currentUserId) { Swal.fire({ title: '認証エラー', text: 'LINE IDを取得できませんでした。', icon: 'error' }); return; }
                     showLoading("決済画面へ安全に接続中...");
                     try {
                         const createCheckoutSession = cloudFunc.httpsCallable('createCheckoutSession');
                         const response = await createCheckoutSession({ userId: currentUserId, uid: currentUserId });
-                        if (response && response.data && response.data.url) {
-                            window.location.href = response.data.url;
-                        }
-                    } catch (error) {
-                        hideLoading();
-                        Swal.fire({ title: 'エラー', text: '詳細: ' + error.message, icon: 'error' });
-                    }
+                        if (response && response.data && response.data.url) window.location.href = response.data.url;
+                    } catch (error) { hideLoading(); Swal.fire({ title: 'エラー', text: '詳細: ' + error.message, icon: 'error' }); }
                 }
                 return;
             }
@@ -351,234 +409,132 @@
                     const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
                     canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', quality);
                 };
-                img.onerror = error => reject(error);
-                img.src = URL.createObjectURL(file);
+                img.onerror = error => reject(error); img.src = URL.createObjectURL(file);
             });
         }
 
         async function handleAppendPhotos(event) {
-            const files = Array.from(event.target.files);
-            if (files.length === 0) return;
-            if (files.length > 5) { 
-                Swal.fire({ title: '注意', text: '一度に追加できるのは5枚までです！', icon: 'warning', confirmButtonColor: '#06C755' });
-                return; 
-            }
+            const files = Array.from(event.target.files); if (files.length === 0) return;
+            if (files.length > 5) { Swal.fire({ title: '注意', text: '一度に追加できるのは5枚までです！', icon: 'warning', confirmButtonColor: '#06C755' }); return; }
             
             const timeId = new Date(currentAppendDate).getTime();
             const cardElement = document.getElementById('card-' + timeId);
             if (cardElement) {
                 let imgContainer = cardElement.querySelector('div[style*="overflow-x: auto"]');
                 if (!imgContainer) {
-                    imgContainer = document.createElement('div');
-                    imgContainer.style.cssText = "display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;";
-                    const btnContainer = cardElement.querySelector('.btn-container');
-                    cardElement.insertBefore(imgContainer, btnContainer);
+                    imgContainer = document.createElement('div'); imgContainer.style.cssText = "display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;";
+                    cardElement.insertBefore(imgContainer, cardElement.querySelector('.btn-container'));
                 }
-                files.forEach(file => {
-                    const tempImg = document.createElement('img');
-                    tempImg.className = 'thumb-img';
-                    tempImg.style.border = "2px dashed #06C755"; 
-                    tempImg.src = URL.createObjectURL(file);
-                    imgContainer.appendChild(tempImg);
-                });
+                files.forEach(file => { const tempImg = document.createElement('img'); tempImg.className = 'thumb-img'; tempImg.style.border = "2px dashed #06C755"; tempImg.src = URL.createObjectURL(file); imgContainer.appendChild(tempImg); });
             }
 
             Swal.fire({ title: 'アップロード開始', text: '裏側で保存しています...', icon: 'info', timer: 1500, showConfirmButton: false });
             
             try {
                 const uploadPromises = files.map(async (file, i) => {
-                    let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
-                    let filename = `append_${Date.now()}_${i}.jpg`;
-                    let storageRef = storage.ref(`images/${targetUserId}/${filename}`);
-                    await storageRef.put(blob);
-                    return await storageRef.getDownloadURL();
+                    let blob = await compressImageToBlob(file, 1024, 1024, 0.75); let filename = `append_${Date.now()}_${i}.jpg`;
+                    let storageRef = storage.ref(`images/${targetUserId}/${filename}`); await storageRef.put(blob); return await storageRef.getDownloadURL();
                 });
                 let uploadedUrls = await Promise.all(uploadPromises);
                 const payload = { userId: targetUserId, action: "appendImage", date: currentAppendDate, images: uploadedUrls };
                 
                 fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-                    .then(() => fetch(GAS_URL + "?userId=" + targetUserId)) 
-                    .then(res => res.json())
-                    .then(freshData => {
-                        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
-                        renderData(freshData); 
-                    });
-            } catch (error) { 
-                console.error("Append Error", error);
-                Swal.fire({ title: 'エラー', text: '写真の追加に失敗しました。', icon: 'error', confirmButtonColor: '#06C755' });
-            }
+                    .then(() => fetch(GAS_URL + "?userId=" + targetUserId)).then(res => res.json())
+                    .then(freshData => { localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData)); renderData(freshData); });
+            } catch (error) { Swal.fire({ title: 'エラー', text: '写真の追加に失敗しました。', icon: 'error', confirmButtonColor: '#06C755' }); }
         }
 
-        function openEditModal(dateStr) { currentEditDate = dateStr; document.getElementById('edit-memo-input').value = window.memoData[dateStr] || ""; document.getElementById('edit-modal').style.display = 'flex'; }
-        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; document.getElementById('edit-memo-input').value = ""; }
+        function openEditModal(dateStr) { 
+            currentEditDate = dateStr; 
+            document.getElementById('edit-memo-input').value = window.memoData[dateStr] || ""; 
+            
+            // 📌 既存のレイヤー色を復元
+            let savedLayer = window.layerData[dateStr] || "red";
+            if(savedLayer === "default" || savedLayer === "") savedLayer = "red";
+            selectLayer('edit', savedLayer);
+            
+            document.getElementById('edit-modal').style.display = 'flex'; 
+        }
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
         
         async function submitEdit() {
             const newMemoText = document.getElementById('edit-memo-input').value; closeEditModal(); showLoading("Saving..."); 
             try {
-                const payload = { userId: targetUserId, action: "update", date: currentEditDate, newMemo: newMemoText };
+                // 📌 編集ペイロードに新しいレイヤー情報を含める
+                const payload = { userId: targetUserId, action: "update", date: currentEditDate, newMemo: newMemoText, layer: currentEditLayer };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
                 await Swal.fire({ title: '完了', text: 'メモを保存しました！', icon: 'success', confirmButtonColor: '#06C755' });
                 document.getElementById('memory-list').innerHTML = ''; showLoading("Loading data..."); 
                 await fetchData(); 
-            } catch (error) { 
-                Swal.fire({ title: 'エラー', text: '更新エラー: ' + error, icon: 'error', confirmButtonColor: '#06C755' });
-                hideLoading(); 
-            }
+            } catch (error) { Swal.fire({ title: 'エラー', text: '更新エラー: ' + error, icon: 'error', confirmButtonColor: '#06C755' }); hideLoading(); }
         }
 
         function openLightbox(dateStr, index) { 
             currentLbDate = dateStr; currentLbIndex = index; updateLightbox(); 
-            document.getElementById('lightbox').style.display = 'flex'; 
-            
-            // 👇 Phase Shift: 「戻る」ボタンの生贄としてダミー履歴をプッシュする
-            history.pushState({ modal: 'lightbox' }, '', '#lightbox');
+            document.getElementById('lightbox').style.display = 'flex'; history.pushState({ modal: 'lightbox' }, '', '#lightbox');
         }
-        
         function closeLightbox(fromPopState = false) { 
             document.getElementById('lightbox').style.display = 'none'; 
-            
-            // 👇 ✕ボタンで手動で閉じた場合は、ダミー履歴を自ら回収して辻褄を合わせる
-            if (!fromPopState && window.location.hash === '#lightbox') {
-                history.back();
-            }
+            if (!fromPopState && window.location.hash === '#lightbox') history.back();
         }
 
-        // 👇 OSの「戻る（スワイプ）」動作を検知して迎撃する
-        window.addEventListener('popstate', function(event) {
-            if (document.getElementById('lightbox').style.display === 'flex') {
-                // 戻るボタンが押されたら、LIFFを閉じるのではなくライトボックスだけを閉じる
-                closeLightbox(true);
-            }
-        });
+        window.addEventListener('popstate', function(event) { if (document.getElementById('lightbox').style.display === 'flex') closeLightbox(true); });
 
         function changeImage(step) {
             const urls = window.galleryData[currentLbDate]; currentLbIndex += step;
             if (currentLbIndex < 0) currentLbIndex = urls.length - 1; if (currentLbIndex >= urls.length) currentLbIndex = 0; updateLightbox();
         }
         function updateLightbox() {
-            const urls = window.galleryData[currentLbDate]; 
-            document.getElementById('lb-img').src = urls[currentLbIndex]; 
+            const urls = window.galleryData[currentLbDate]; document.getElementById('lb-img').src = urls[currentLbIndex]; 
             document.getElementById('lb-counter').innerText = `${currentLbIndex + 1} / ${urls.length}`;
-            const navs = document.querySelectorAll('.lb-nav'); navs.forEach(nav => nav.style.display = urls.length > 1 ? 'block' : 'none');
+            document.querySelectorAll('.lb-nav').forEach(nav => nav.style.display = urls.length > 1 ? 'block' : 'none');
             document.getElementById('lb-delete-btn').style.display = isSharedMode ? 'none' : 'inline-flex';
         }
 
-        // ✅ 単発削除の即時物理破壊ロック
         async function deleteSingleImage() {
-            const result = await Swal.fire({
-                title: '写真の切断', 
-                text: "この写真1枚だけを削除しますか？", 
-                icon: 'warning',
-                showCancelButton: true, 
-                confirmButtonColor: '#ff5252', 
-                cancelButtonColor: '#06C755', 
-                confirmButtonText: '削除する', 
-                cancelButtonText: 'やめる'
-            });
+            const result = await Swal.fire({ title: '写真の切断', text: "この写真1枚だけを削除しますか？", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff5252', cancelButtonColor: '#06C755', confirmButtonText: '削除する', cancelButtonText: 'やめる' });
             if (!result.isConfirmed) return;
 
-            const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; 
-            closeLightbox(); 
-            
+            const targetUrl = window.galleryData[currentLbDate][currentLbIndex]; closeLightbox(); 
             if (!deletingUrls.includes(targetUrl)) deletingUrls.push(targetUrl);
             
-            const timeId = new Date(currentLbDate).getTime();
-            const cardElement = document.getElementById('card-' + timeId);
-            
-            if (cardElement) {
-                const images = cardElement.querySelectorAll('img.thumb-img');
-                images.forEach(img => {
-                    if (img.src === targetUrl) img.classList.add('deleting'); 
-                });
-            }
+            const timeId = new Date(currentLbDate).getTime(); const cardElement = document.getElementById('card-' + timeId);
+            if (cardElement) { cardElement.querySelectorAll('img.thumb-img').forEach(img => { if (img.src === targetUrl) img.classList.add('deleting'); }); }
 
             try {
                 const payload = { userId: targetUserId, action: "deleteImage", date: currentLbDate, imageUrl: targetUrl };
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
                 
-                // 📌 Phase Shift: 幽霊化を防ぐため、画面上から対象の画像を「即時」かつ「物理的」に消滅させる
                 if (cardElement) {
-                    const images = cardElement.querySelectorAll('img.thumb-img');
-                    images.forEach(img => {
+                    cardElement.querySelectorAll('img.thumb-img').forEach(img => {
                         if (img.src === targetUrl) {
                             img.style.transition = "opacity 0.3s ease, transform 0.3s ease, width 0.3s ease, margin 0.3s ease";
-                            img.style.opacity = "0";
-                            img.style.transform = "scale(0)";
-                            img.style.width = "0px";
-                            img.style.margin = "0px";
-                            img.style.border = "none";
-                            setTimeout(() => img.remove(), 300); // 完全にDOMから削り取る
+                            img.style.opacity = "0"; img.style.transform = "scale(0)"; img.style.width = "0px"; img.style.margin = "0px"; img.style.border = "none";
+                            setTimeout(() => img.remove(), 300);
                         }
                     });
                 }
-
-                // 裏側で最新データを取得し、ローカルキャッシュだけを更新（再描画はしない）
-                fetch(GAS_URL + "?userId=" + targetUserId)
-                    .then(res => res.json())
-                    .then(freshData => {
-                        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
-                    });
-
-                deletingUrls = deletingUrls.filter(url => url !== targetUrl);
-                Swal.fire({ title: '切断完了', icon: 'success', timer: 1000, showConfirmButton: false });
+                fetch(GAS_URL + "?userId=" + targetUserId).then(res => res.json()).then(freshData => { localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData)); });
+                deletingUrls = deletingUrls.filter(url => url !== targetUrl); Swal.fire({ title: '切断完了', icon: 'success', timer: 1000, showConfirmButton: false });
             } catch (error) { 
-                console.error("Delete Error", error);
                 deletingUrls = deletingUrls.filter(url => url !== targetUrl);
-                if (cardElement) {
-                    const images = cardElement.querySelectorAll('img.thumb-img');
-                    images.forEach(img => {
-                        if (img.src === targetUrl) img.classList.remove('deleting');
-                    });
-                }
+                if (cardElement) cardElement.querySelectorAll('img.thumb-img').forEach(img => { if (img.src === targetUrl) img.classList.remove('deleting'); });
             }
         }
 
         function initModalMap(lat, lng) {
-            document.getElementById('modal-map-container').style.display = 'block'; 
-            const pos = { lat: lat, lng: lng };
-            
+            document.getElementById('modal-map-container').style.display = 'block'; const pos = { lat: lat, lng: lng };
             if (!modalMap) {
-                modalMap = new google.maps.Map(document.getElementById("modal-map"), { 
-                    center: pos, 
-                    zoom: 19, 
-                    mapTypeControl: false, 
-                    streetViewControl: false, 
-                    fullscreenControl: false, 
-                    gestureHandling: "greedy" 
-                });
-                modalMap.addListener('dragend', () => {
-                    const center = modalMap.getCenter(); 
-                    currentLat = center.lat(); 
-                    currentLng = center.lng();
-                    const statusText = document.getElementById('gps-status'); 
-                    statusText.innerText = "手動で場所を設定中"; 
-                    statusText.style.color = "#FF9800";
-                });
-            } else { 
-                modalMap.setCenter(pos); 
-            }
+                modalMap = new google.maps.Map(document.getElementById("modal-map"), { center: pos, zoom: 19, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, gestureHandling: "greedy" });
+                modalMap.addListener('dragend', () => { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); document.getElementById('gps-status').innerText = "手動で場所を設定中"; document.getElementById('gps-status').style.color = "#FF9800"; });
+            } else { modalMap.setCenter(pos); }
 
-            if (window.modalMarkers) {
-                window.modalMarkers.forEach(m => m.setMap(null));
-            }
+            if (window.modalMarkers) window.modalMarkers.forEach(m => m.setMap(null));
             window.modalMarkers = [];
-            
             if (typeof markers !== 'undefined') {
                 markers.forEach(mainMarker => {
-                    const mPos = mainMarker.getPosition();
-                    const mm = new google.maps.Marker({
-                        position: mPos,
-                        map: modalMap,
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 5,
-                            fillColor:"#666666", 
-                            fillOpacity: 0.7,
-                            strokeWeight: 1.5,
-                            strokeColor:"#FFFFFF"
-                        }
-                    });
+                    const mm = new google.maps.Marker({ position: mainMarker.getPosition(), map: modalMap, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 5, fillColor:"#666666", fillOpacity: 0.7, strokeWeight: 1.5, strokeColor:"#FFFFFF" } });
                     window.modalMarkers.push(mm);
                 });
             }
@@ -588,38 +544,23 @@
             const statusText = document.getElementById('gps-status'); statusText.innerText = "⏳ GPS Loading..."; statusText.style.color = "blue"; 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        currentLat = position.coords.latitude; currentLng = position.coords.longitude;
-                        statusText.innerText = isRecenter ? "現在地に戻りました" : "✅ 現在地を取得しました"; statusText.style.color = "#06C755"; initModalMap(currentLat, currentLng);
-                    },
-                    function(error) {
-                        statusText.innerText = "❌ 取得失敗。地図を動かして場所を決めてください。"; statusText.style.color = "red";
-                        if (!currentLat) currentLat = 35.681236; if (!currentLng) currentLng = 139.767125; initModalMap(currentLat, currentLng);
-                    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    function(position) { currentLat = position.coords.latitude; currentLng = position.coords.longitude; statusText.innerText = isRecenter ? "現在地に戻りました" : "✅ 現在地を取得しました"; statusText.style.color = "#06C755"; initModalMap(currentLat, currentLng); },
+                    function(error) { statusText.innerText = "❌ 取得失敗。地図を動かして場所を決めてください。"; statusText.style.color = "red"; if (!currentLat) currentLat = 35.681236; if (!currentLng) currentLng = 139.767125; initModalMap(currentLat, currentLng); }, 
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             }
         }
         
         function handleDirectFiles(event) {
             const files = Array.from(event.target.files); if (files.length === 0) return;
-            if (stagingFiles.length + files.length > 5) { 
-                Swal.fire({ title: '注意', text: '最大5枚までです。', icon: 'warning', confirmButtonColor: '#06C755' });
-                stagingFiles = stagingFiles.concat(files.slice(0, 5 - stagingFiles.length));
-            } else { stagingFiles = stagingFiles.concat(files); }
-            
-            setTimeout(() => {
-                renderPreviews(); 
-                document.getElementById('input-modal').style.display = 'flex'; 
-                getGps(); 
-            }, 500); 
-            
+            if (stagingFiles.length + files.length > 5) { Swal.fire({ title: '注意', text: '最大5枚までです。', icon: 'warning', confirmButtonColor: '#06C755' }); stagingFiles = stagingFiles.concat(files.slice(0, 5 - stagingFiles.length)); } 
+            else { stagingFiles = stagingFiles.concat(files); }
+            setTimeout(() => { renderPreviews(); document.getElementById('input-modal').style.display = 'flex'; getGps(); }, 500); 
             event.target.value = ''; 
         }
 
         function closeModal() {
-            document.getElementById('input-modal').style.display = 'none';
-            document.getElementById('memo-input').value = "";
-            document.getElementById('gps-status').innerText = "⏳ GPS Loading..."; document.getElementById('modal-map-container').style.display = 'none'; 
+            document.getElementById('input-modal').style.display = 'none'; document.getElementById('memo-input').value = ""; document.getElementById('gps-status').innerText = "⏳ GPS Loading..."; document.getElementById('modal-map-container').style.display = 'none'; 
             currentLat = null; currentLng = null; stagingFiles = []; renderPreviews();
         }
 
@@ -627,350 +568,170 @@
             const grid = document.getElementById('preview-grid'); grid.innerHTML = ''; 
             stagingFiles.forEach((file, index) => {
                 const box = document.createElement('div'); box.className = 'preview-box';
-                
-                const img = document.createElement('img'); 
-                img.src = URL.createObjectURL(file);
-                
+                const img = document.createElement('img'); img.src = URL.createObjectURL(file);
                 const deleteBtn = document.createElement('div'); deleteBtn.className = 'delete-btn'; deleteBtn.innerText = '✕'; deleteBtn.onclick = function() { removeFile(index); };
                 box.appendChild(img); box.appendChild(deleteBtn); grid.appendChild(box);
             });
-            if (stagingFiles.length < 5) {
-                const addBox = document.createElement('div'); addBox.className = 'add-more-box';
-                addBox.onclick = function() { triggerFileInput('main-trigger'); }; addBox.innerHTML = `<span>＋</span><p>追加</p>`; grid.appendChild(addBox);
-            }
+            if (stagingFiles.length < 5) { const addBox = document.createElement('div'); addBox.className = 'add-more-box'; addBox.onclick = function() { triggerFileInput('main-trigger'); }; addBox.innerHTML = `<span>＋</span><p>追加</p>`; grid.appendChild(addBox); }
         }
 
         function removeFile(index) { stagingFiles.splice(index, 1); renderPreviews(); }
 
         async function importMemory(dateStr, latStr, lngStr) {
-            const result = await Swal.fire({
-                title: '自分のマップに保存', 
-                text: "このカードを自分のTACKにインポートしますか？", 
-                icon: 'question',
-                showCancelButton: true, confirmButtonColor: '#06C755', confirmButtonText: '保存する'
-            });
+            const result = await Swal.fire({ title: '自分のマップに保存', text: "このカードを自分のTACKにインポートしますか？", icon: 'question', showCancelButton: true, confirmButtonColor: '#06C755', confirmButtonText: '保存する' });
             if (!result.isConfirmed) return;
-
             showLoading("インポート中...");
             try {
-                const memoText = window.memoData[dateStr] || "";
-                const gpsText = (latStr && lngStr) ? `${latStr},${lngStr}` : "";
-                const imageUrls = window.galleryData[dateStr] || [];
-
-                const payload = { 
-                    userId: currentUserId, 
-                    source: "liff", 
-                    memo: "【共有マップから保存】\n" + memoText, 
-                    gps: gpsText, 
-                    images: imageUrls 
-                };
-
+                const payload = { userId: currentUserId, source: "liff", memo: "【共有マップから保存】\n" + (window.memoData[dateStr] || ""), gps: (latStr && lngStr) ? `${latStr},${lngStr}` : "", images: window.galleryData[dateStr] || [], layer: "mono" }; // インポートは控えめにモノクロ設定
                 await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                
                 Swal.fire({ title: 'インポート完了！', text: '自分のマップに追加されました。', icon: 'success', confirmButtonColor: '#06C755' });
-            } catch (error) {
-                console.error("Import Error", error);
-                Swal.fire({ title: 'エラー', text: '保存に失敗しました。', icon: 'error', confirmButtonColor: '#06C755' });
-            } finally {
-                hideLoading();
-            }
+            } catch (error) { Swal.fire({ title: 'エラー', text: '保存に失敗しました。', icon: 'error', confirmButtonColor: '#06C755' }); } finally { hideLoading(); }
         }
 
         async function executeMerge(targetDate) {
-            const btn = document.querySelector('#input-modal .btn-submit'); 
-            btn.innerText = "Merging..."; btn.disabled = true; 
-            
+            const btn = document.querySelector('#input-modal .btn-submit'); btn.innerText = "Merging..."; btn.disabled = true; 
             try {
                 let uploadedUrls = [];
                 if (stagingFiles.length > 0) {
                     const uploadPromises = stagingFiles.map(async (file, i) => {
-                        let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
-                        let filename = `append_${Date.now()}_${i}.jpg`;
-                        let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
-                        await storageRef.put(blob);
-                        return await storageRef.getDownloadURL();
-                    });
-                    uploadedUrls = await Promise.all(uploadPromises);
+                        let blob = await compressImageToBlob(file, 1024, 1024, 0.75); let filename = `append_${Date.now()}_${i}.jpg`; let storageRef = storage.ref(`images/${currentUserId}/${filename}`); await storageRef.put(blob); return await storageRef.getDownloadURL();
+                    }); uploadedUrls = await Promise.all(uploadPromises);
                 }
-
-                if (uploadedUrls.length > 0) {
-                    const payload = { userId: targetUserId, action: "appendImage", date: targetDate, images: uploadedUrls };
-                    await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                }
+                if (uploadedUrls.length > 0) await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ userId: targetUserId, action: "appendImage", date: targetDate, images: uploadedUrls }) });
 
                 const memoText = document.getElementById('memo-input').value;
                 if (memoText) {
-                    const oldMemo = window.memoData[targetDate] || "";
-                    const newMemo = oldMemo ? oldMemo + "\n\n" + memoText : memoText;
-                    const memoPayload = { userId: targetUserId, action: "update", date: targetDate, newMemo: newMemo };
-                    await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(memoPayload) });
+                    const oldMemo = window.memoData[targetDate] || ""; const newMemo = oldMemo ? oldMemo + "\n\n" + memoText : memoText;
+                    await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ userId: targetUserId, action: "update", date: targetDate, newMemo: newMemo }) }); // レイヤーはそのまま
                 }
-
-                closeModal();
-                Swal.fire({ title: '結合完了！', text: '過去のカードに追加しました。', icon: 'success', timer: 2000, showConfirmButton: false });
-                await fetchData();
-
-            } catch (error) { 
-                Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' });
-            } finally {
-                btn.innerText = "送信する"; btn.disabled = false;
-            }
+                closeModal(); Swal.fire({ title: '結合完了！', text: '過去のカードに追加しました。', icon: 'success', timer: 2000, showConfirmButton: false }); await fetchData();
+            } catch (error) { Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' }); } finally { btn.innerText = "送信する"; btn.disabled = false; }
         }
 
         async function submitData() {
             if (modalMap) { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); }
-            if (!currentLat || !currentLng) { 
-                Swal.fire({ title: '注意', text: '場所が決定されていません。', icon: 'warning', confirmButtonColor: '#06C755' });
-                return; 
-            }
+            if (!currentLat || !currentLng) { Swal.fire({ title: '注意', text: '場所が決定されていません。', icon: 'warning', confirmButtonColor: '#06C755' }); return; }
 
             let targetMergeDate = null;
             if (window.cardLocations) {
-                for (let loc of window.cardLocations) {
-                    if (Math.abs(loc.lat - currentLat) < 0.00015 && Math.abs(loc.lng - currentLng) < 0.00015) {
-                        targetMergeDate = loc.date;
-                        break; 
-                    }
-                }
+                for (let loc of window.cardLocations) { if (Math.abs(loc.lat - currentLat) < 0.00015 && Math.abs(loc.lng - currentLng) < 0.00015) { targetMergeDate = loc.date; break; } }
             }
 
             if (targetMergeDate) {
-                const res = await Swal.fire({
-                    title: '📌 過去の記録に重ねますか？',
-                    html: `この場所にはすでにカードがあります。<br>過去の記録に<b>追加（結合）</b>しますか？`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#06C755',
-                    cancelButtonColor: '#FFA000',
-                    confirmButtonText: '追加する',
-                    cancelButtonText: '新しく作る'
-                });
-
-                if (res.isConfirmed) {
-                    await executeMerge(targetMergeDate);
-                    return; 
-                } else if (res.dismiss === Swal.DismissReason.cancel) {
-                    currentLat += 0.0003;
-                    currentLng -= 0.0003;
-                } else {
-                    return; 
-                }
+                const res = await Swal.fire({ title: '📌 過去の記録に重ねますか？', html: `この場所にはすでにカードがあります。<br>過去の記録に<b>追加（結合）</b>しますか？`, icon: 'question', showCancelButton: true, confirmButtonColor: '#06C755', cancelButtonColor: '#FFA000', confirmButtonText: '追加する', cancelButtonText: '新しく作る' });
+                if (res.isConfirmed) { await executeMerge(targetMergeDate); return; } else if (res.dismiss === Swal.DismissReason.cancel) { currentLat += 0.0003; currentLng -= 0.0003; } else { return; }
             }
 
-            const btn = document.querySelector('#input-modal .btn-submit'); 
-            btn.innerText = "Uploading..."; btn.disabled = true; 
+            const btn = document.querySelector('#input-modal .btn-submit'); btn.innerText = "Uploading..."; btn.disabled = true; 
             
             try {
                 const memoText = document.getElementById('memo-input').value; const gpsText = `${currentLat},${currentLng}`;
-                
                 let uploadedUrls = [];
                 if (stagingFiles.length > 0) {
                     const uploadPromises = stagingFiles.map(async (file, i) => {
-                        let blob = await compressImageToBlob(file, 1024, 1024, 0.75);
-                        let filename = `liff_${Date.now()}_${i}.jpg`;
-                        let storageRef = storage.ref(`images/${currentUserId}/${filename}`);
-                        await storageRef.put(blob);
-                        return await storageRef.getDownloadURL();
-                    });
-                    uploadedUrls = await Promise.all(uploadPromises);
+                        let blob = await compressImageToBlob(file, 1024, 1024, 0.75); let filename = `liff_${Date.now()}_${i}.jpg`; let storageRef = storage.ref(`images/${currentUserId}/${filename}`); await storageRef.put(blob); return await storageRef.getDownloadURL();
+                    }); uploadedUrls = await Promise.all(uploadPromises);
                 }
 
-                const payload = { userId: targetUserId, source: "liff", memo: memoText, gps: gpsText, images: uploadedUrls };
+                // 📌 Payloadに currentInputLayer を追加
+                const payload = { userId: targetUserId, source: "liff", memo: memoText, gps: gpsText, images: uploadedUrls, layer: currentInputLayer };
 
                 fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-                    .then(() => fetch(GAS_URL + "?userId=" + targetUserId)) 
-                    .then(res => res.json())
-                    .then(freshData => {
-                        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData));
-                        renderData(freshData);
-                    });
+                    .then(() => fetch(GAS_URL + "?userId=" + targetUserId)).then(res => res.json())
+                    .then(freshData => { localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData)); renderData(freshData); });
                 
                 closeModal();
+                Swal.fire({ title: '送信完了！', text: 'マップへの反映は裏側で行われます。', icon: 'success', timer: 2000, showConfirmButton: false });
                 
-                let tempCardHtml = `<div class="memory-card" style="border: 2px dashed #06C755; background: #f0fdf4;">`;
-                tempCardHtml += `<div class="memory-date" style="color:#06C755;">⏳ ただいまマップに反映中...</div>`;
-                if (memoText) tempCardHtml += `<div class="memory-text">${memoText}</div>`;
-                if (uploadedUrls.length > 0) {
-                    tempCardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
-                    for(let j=0; j<uploadedUrls.length; j++) {
-                        tempCardHtml += `<img src="${uploadedUrls[j]}" class="thumb-img">`;
-                    }
-                    tempCardHtml += `</div>`;
-                }
-                tempCardHtml += `</div>`;
-                document.getElementById('memory-list').insertAdjacentHTML('afterbegin', tempCardHtml);
-
-                Swal.fire({ 
-                    title: '送信完了！', 
-                    text: 'マップへの反映は裏側で行われます。', 
-                    icon: 'success', 
-                    timer: 2000, 
-                    showConfirmButton: false 
-                });
-                
-            } catch (error) { 
-                Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' });
-            } finally {
-                btn.innerText = "送信する"; btn.disabled = false;
-            }
+            } catch (error) { Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' }); } finally { btn.innerText = "送信する"; btn.disabled = false; }
         }
 
-        // ✅ 全体削除の即時物理破壊ロック
         async function deleteMemory(dateStr) {
-            const result = await Swal.fire({
-                title: '投稿の削除', 
-                text: "このカードを完全に削除しますか？", 
-                icon: 'warning',
-                showCancelButton: true, 
-                confirmButtonColor: '#ff5252', 
-                cancelButtonColor: '#06C755', 
-                confirmButtonText: '削除する', 
-                cancelButtonText: 'やめる'
-            });
+            const result = await Swal.fire({ title: '空間からの消去', text: "このデータを完全に削除しますか？", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff5252', cancelButtonColor: '#06C755', confirmButtonText: '削除する', cancelButtonText: 'やめる' });
             if (!result.isConfirmed) return;
 
-            const timeId = new Date(dateStr).getTime();
-            const cardElement = document.getElementById('card-' + timeId);
-            
-            if (cardElement) {
-                cardElement.classList.add('deleting');
-                const dateEl = cardElement.querySelector('.memory-date');
-                if (dateEl) dateEl.innerHTML = `<span style="color:#ff5252;">削除中...</span>`;
-            }
+            const timeId = new Date(dateStr).getTime(); const cardElement = document.getElementById('card-' + timeId);
+            if (cardElement) { cardElement.classList.add('deleting'); const dateEl = cardElement.querySelector('.memory-date'); if (dateEl) dateEl.innerHTML = `<span style="color:#ff5252;">削除中...</span>`; }
 
             try {
-                const payload = { userId: targetUserId, action: "delete", date: dateStr };
-                await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-                
-                // 📌 Phase Shift: 画面全体の再描画を待たず、このカードだけをアニメーションで即座に消滅させる
+                await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ userId: targetUserId, action: "delete", date: dateStr }) });
                 if (cardElement) {
                     cardElement.style.transition = "opacity 0.4s ease, transform 0.4s ease, height 0.4s ease, padding 0.4s ease, margin 0.4s ease";
-                    cardElement.style.opacity = "0";
-                    cardElement.style.transform = "scale(0.9)";
-                    cardElement.style.height = "0px";
-                    cardElement.style.padding = "0px";
-                    cardElement.style.margin = "0px";
-                    cardElement.style.border = "none";
-                    setTimeout(() => cardElement.remove(), 400); // 完全にDOMから削り取る
+                    cardElement.style.opacity = "0"; cardElement.style.transform = "scale(0.9)"; cardElement.style.height = "0px"; cardElement.style.padding = "0px"; cardElement.style.margin = "0px"; cardElement.style.border = "none";
+                    setTimeout(() => cardElement.remove(), 400); 
                 }
-
-                // 裏側で最新データを取得し、ローカルキャッシュだけを更新（再描画による幽霊復活を防ぐ）
-                fetch(GAS_URL + "?userId=" + targetUserId)
-                    .then(res => res.json())
-                    .then(freshData => {
-                        // 念のため、取得したデータから対象の日付をフロントエンドで弾いておく（完全防壁）
-                        const safeData = freshData.filter(row => row[0] !== dateStr);
-                        localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(safeData));
-                    });
-                
+                fetch(GAS_URL + "?userId=" + targetUserId).then(res => res.json()).then(freshData => { localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData.filter(row => row[0] !== dateStr))); });
                 Swal.fire({ title: '削除完了', icon: 'success', timer: 1000, showConfirmButton: false });
-            } catch (error) { 
-                console.error("Delete Error", error);
-                if (cardElement) cardElement.classList.remove('deleting'); 
-            }
+            } catch (error) { if (cardElement) cardElement.classList.remove('deleting'); }
         }
 
         function renderData(data) {
-            const listContainer = document.getElementById('memory-list');
-            listContainer.innerHTML = ''; 
-            let hasPins = false;
-            
-            window.galleryData = {}; window.memoData = {};
-            window.cardLocations = []; 
-            
-            if (!map) { initMap(); }
-            bounds = new google.maps.LatLngBounds();
-            markers.forEach(marker => marker.setMap(null));
-            markers = []; 
+            const listContainer = document.getElementById('memory-list'); listContainer.innerHTML = ''; let hasPins = false;
+            window.galleryData = {}; window.memoData = {}; window.layerData = {}; window.cardLocations = []; 
+            if (!map) { initMap(); } bounds = new google.maps.LatLngBounds(); markers.forEach(marker => marker.setMap(null)); markers = []; 
 
             let cardCounter = 0; 
 
             for (let i = data.length - 1; i > 0; i--) {
-                const row = data[i]; const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || "";
+                const row = data[i]; const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || ""; 
+                // 📌 Phase 2: F列からレイヤー色を取得（未定義・空欄・defaultの場合はred）
+                let layerColor = row[5] || "red"; if(layerColor === "default" || layerColor === "") layerColor = "red";
+                
                 if (!date) continue;
-
                 const timeId = new Date(date).getTime();
-
                 if (isSharedMode && !filterIds.includes(String(timeId))) continue; 
+                
+                // 🔍 フィルター判定
+                if (currentFilter !== 'all' && layerColor !== currentFilter) continue;
 
                 let textToShow = ""; let originalUrls = []; 
                 if (colD && colD.startsWith("http")) originalUrls = colD.split(",");
-                window.galleryData[date] = originalUrls; window.memoData[date] = colC;
+                window.galleryData[date] = originalUrls; window.memoData[date] = colC; window.layerData[date] = layerColor;
                 let latStr = null; let lngStr = null;
 
-                if (typeOrText === "画像") { 
-                    textToShow = "📷 写真を記録しました";
-                } else if (typeOrText === "位置情報") { 
+                if (typeOrText === "画像") { textToShow = "📷 写真を記録しました"; } 
+                else if (typeOrText === "位置情報") { 
                     textToShow = "📍 " + colC;
                     if (colE) {
                         const latLngArr = String(colE).split(",");
                         if(latLngArr.length === 2 && map) {
                             latStr = latLngArr[0]; lngStr = latLngArr[1];
-                            let latNum = parseFloat(latStr);
-                            let lngNum = parseFloat(lngStr);
-                            
+                            let latNum = parseFloat(latStr); let lngNum = parseFloat(lngStr);
                             let overlapCount = window.cardLocations.filter(p => Math.abs(p.lat - latNum) < 0.0001 && Math.abs(p.lng - lngNum) < 0.0001).length;
-                            if (overlapCount > 0) {
-                                let angle = overlapCount * (Math.PI / 3); 
-                                latNum += Math.cos(angle) * 0.0003; 
-                                lngNum += Math.sin(angle) * 0.0003;
-                            }
-                            
+                            if (overlapCount > 0) { let angle = overlapCount * (Math.PI / 3); latNum += Math.cos(angle) * 0.0003; lngNum += Math.sin(angle) * 0.0003; }
                             window.cardLocations.push({ date: date, lat: latNum, lng: lngNum });
-
                             const position = { lat: latNum, lng: lngNum };
                             
-                            const pinSvg = {
-                                path: "M12 2C7.6 2 4 5.6 4 10c0 7 8 12 8 12s8-5 8-12C20 5.6 16.4 2 12 2zm0 11.5c-2 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z",
-                                fillColor: "#FF5252",   
-                                fillOpacity: 1,
-                                strokeWeight: 1.5,      
-                                strokeColor: "#A00000", 
-                                scale: 1.1,            
-                                anchor: new google.maps.Point(12, 22), 
-                                labelOrigin: new google.maps.Point(12, 10)
-                            };
-
-                            const marker = new google.maps.Marker({ 
-                                position: position, 
-                                map: map, 
-                                title: colC,
-                                icon: pinSvg
-                            });
-
-                            marker.addListener("click", () => { 
-                                jumpToCard(date, latStr, lngStr); 
-                            });
-
-                            markers.push(marker); 
-                            bounds.extend(position); hasPins = true;
+                            // 📍 動的ピンの生成
+                            const marker = new google.maps.Marker({ position: position, map: map, title: colC, icon: getPinSvg(layerColor) });
+                            marker.addListener("click", () => { jumpToCard(date, latStr, lngStr); });
+                            markers.push(marker); bounds.extend(position); hasPins = true;
                         }
                     }
-                } else { 
-                    textToShow = typeOrText; 
-                }
+                } else { textToShow = typeOrText; }
 
                 let cardHtml = `<div class="memory-card" id="card-${timeId}" ${!isSharedMode ? `onclick="if(isSelectionMode) toggleCardSelection('${date}', '${timeId}')"` : ''}>`;
-                
                 if (!isSharedMode) {
                     cardHtml += `<input type="checkbox" id="cb-${timeId}" class="select-checkbox" style="display:none;">`;
-                    cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete"><span class="material-symbols-outlined">delete</span>まるごと削除</button>`;
+                    cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete"><span class="material-symbols-outlined">delete</span>抹消</button>`;
                 }
                 
-                if (date) cardHtml += `<div class="memory-date">${new Date(date).toLocaleString('ja-JP')}</div>`;
+                // 📌 レイヤーインジケーター（色付き丸）を追加
+                if (date) {
+                    cardHtml += `<div class="layer-dot ${layerColor}"></div>`;
+                    cardHtml += `<div class="memory-date">${new Date(date).toLocaleString('ja-JP')}</div>`;
+                }
+
                 if (textToShow) {
                     if (textToShow.length > 80 || (textToShow.match(/\n/g) || []).length >= 3) {
                         cardHtml += `<div class="memory-text collapsed" id="memo-${timeId}">${autoLink(textToShow)}</div>`;
                         cardHtml += `<div class="read-more-btn" id="rmbtn-${timeId}" onclick="toggleMemo('${timeId}')">▼ 続きを読む</div>`;
-                    } else {
-                        cardHtml += `<div class="memory-text">${autoLink(textToShow)}</div>`;
-                    }
+                    } else { cardHtml += `<div class="memory-text">${autoLink(textToShow)}</div>`; }
                 }
 
                 if (originalUrls.length > 0) {
                     cardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
                     for(let j=0; j<originalUrls.length; j++) {
-                        // 👇 削除進行中のURLなら、赤枠（deletingクラス）を最初から付ける
                         let imgClass = deletingUrls.includes(originalUrls[j]) ? "thumb-img deleting" : "thumb-img";
                         cardHtml += `<img src="${originalUrls[j]}" class="${imgClass}" onclick="openLightbox('${date}', ${j})">`;
                     }
@@ -982,94 +743,59 @@
                     cardHtml += `<button onclick="focusMap(${latStr}, ${lngStr})" class="btn btn-map"><span class="material-symbols-outlined">place</span>マップ</button>`;
                     cardHtml += `<a href="https://www.google.com/maps/dir/?api=1&destination=${latStr},${lngStr}" target="_blank" class="btn btn-nav"><span class="material-symbols-outlined">directions_car</span>ナビ開始</a>`;
                 }
-                
                 if (!isSharedMode) {
-                    cardHtml += `<button onclick="openEditModal('${date}')" class="btn btn-edit"><span class="material-symbols-outlined">edit_note</span>メモ</button>`;
+                    cardHtml += `<button onclick="openEditModal('${date}')" class="btn btn-edit"><span class="material-symbols-outlined">edit_note</span>編集</button>`;
                     cardHtml += `<button onclick="triggerAppendPhoto('${date}')" class="btn btn-photo"><span class="material-symbols-outlined">add_a_photo</span>写真追加</button>`;
                     cardHtml += `<button onclick="shareMemory('${date}')" class="btn btn-share">LINEで送る</button>`;
                 } else {
                     cardHtml += `<button onclick="importMemory('${date}', '${latStr}', '${lngStr}')" class="btn" style="background-color: #FFF3E0; color: #E65100; border-color: #FFCC80;"><span class="material-symbols-outlined">download</span>自分のマップに保存</button>`;
                 }
-                
-                cardHtml += `</div></div>`;
-                listContainer.innerHTML += cardHtml;
-
-                cardCounter++;
-                if (!isPremium && !isSharedMode && cardCounter % 3 === 0) {
-                    let adHtml = `
-                    <div class="memory-card" style="margin: 10px 0; background: #f8f9fa; border: 2px dashed #ccc; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px 20px; box-shadow: none;">
-                        <div style="font-size: 0.75rem; color: #999; font-weight: bold; margin-bottom: 10px;">スポンサーリンク</div>
-                        <div style="font-size: 1.1rem; font-weight: bold; color: #333; margin-bottom: 8px;">👑 TACK Premium</div>
-                        <div style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">この広告を非表示にし、<br>マップのピン留めを無制限に拡張します。</div>
-                        <button onclick="triggerUpgrade()" class="btn" style="background-color: #333; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.2s;">アップグレード</button>
-                    </div>`;
-                    listContainer.innerHTML += adHtml;
-                }
+                cardHtml += `</div></div>`; listContainer.innerHTML += cardHtml; cardCounter++;
             }
 
-            if (hasPins && map) { 
-                if (markers.length === 1) {
-                    map.setCenter(markers[0].getPosition());
-                    map.setZoom(15); 
-                } else {
-                    map.fitBounds(bounds); 
-                }
-            }
+            if (hasPins && map) { if (markers.length === 1) { map.setCenter(markers[0].getPosition()); map.setZoom(15); } else { map.fitBounds(bounds); } }
         }
         
-        function initMap() { 
-            map = new google.maps.Map(document.getElementById("map"), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 5, disableDefaultUI: true, zoomControl: true, fullscreenControl: true }); 
-        }
+        function initMap() { map = new google.maps.Map(document.getElementById("map"), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 5, disableDefaultUI: true, zoomControl: true, fullscreenControl: true }); }
         
         async function fetchData() {
-            const cacheKey = "memoryMapCache_" + targetUserId;
-            const cachedDataStr = localStorage.getItem(cacheKey);
-            if (cachedDataStr) {
-                try {
-                    const cachedData = JSON.parse(cachedDataStr);
-                    renderData(cachedData); 
-                } catch(e) {}
-                hideLoading();
-            }
-
+            const cacheKey = "memoryMapCache_" + targetUserId; const cachedDataStr = localStorage.getItem(cacheKey);
+            if (cachedDataStr) { try { renderData(JSON.parse(cachedDataStr)); } catch(e) {} hideLoading(); }
             try {
-                const response = await fetch(GAS_URL + "?userId=" + targetUserId);
-                const freshData = await response.json();
-
-                if (JSON.stringify(freshData) !== cachedDataStr) {
-                    localStorage.setItem(cacheKey, JSON.stringify(freshData));
-                    renderData(freshData); 
-                    hideLoading();
-                }
-            } catch (error) {
-                if (!cachedDataStr) {
-                    document.getElementById('loading').innerText = "通信エラーが発生しました: " + error;
-                } else {
-                    console.log("バックグラウンド通信エラー:", error);
-                }
-            }
+                const response = await fetch(GAS_URL + "?userId=" + targetUserId); const freshData = await response.json();
+                if (JSON.stringify(freshData) !== cachedDataStr) { localStorage.setItem(cacheKey, JSON.stringify(freshData)); renderData(freshData); hideLoading(); }
+            } catch (error) { if (!cachedDataStr) { document.getElementById('loading').innerText = "通信エラーが発生しました: " + error; } }
         }
 
-        document.getElementById('memo-input').addEventListener('focus', function() {
-            setTimeout(() => {
-                this.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 300); 
-        });
+        document.getElementById('memo-input').addEventListener('focus', function() { setTimeout(() => { this.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); });
+
+        // ⚙️ コンソールからの遷移用（複数選択）
+        function startSelectionMode() {
+            closeSettings();
+            if (!isSelectionMode) toggleSelectionMode();
+        }
 
         function toggleSelectionMode() {
             isSelectionMode = !isSelectionMode;
-            const btn = document.getElementById('mode-toggle-btn');
+            const btn = document.getElementById('settings-btn');
             const listSection = document.getElementById('list-section');
             const sendFab = document.getElementById('send-multiple-fab');
             const mainFab = document.querySelector('.fab-container');
             
             if (isSelectionMode) {
-                btn.classList.add('active'); btn.innerHTML = `<span class="material-symbols-outlined">close</span>キャンセル`;
+                btn.innerHTML = `<span class="material-symbols-outlined">close</span>キャンセル`;
+                btn.onclick = toggleSelectionMode; // 直接トグルに戻す
+                btn.style.backgroundColor = "#ff5252"; btn.style.color = "white"; btn.style.borderColor = "#ff5252";
+                
                 listSection.classList.add('selection-mode');
                 sendFab.style.display = 'block'; mainFab.style.display = 'none';
                 selectedMemories = []; updateSendFab();
             } else {
-                btn.classList.remove('active'); btn.innerHTML = `<span class="material-symbols-outlined">checklist</span>複数選択`;
+                // 通常の⚙️管理ボタンに戻す
+                btn.innerHTML = `<span class="material-symbols-outlined">settings</span> 管理`;
+                btn.onclick = openSettings; // 設定モーダルを開く処理へ
+                btn.style.backgroundColor = "rgba(255, 255, 255, 0.95)"; btn.style.color = "#555"; btn.style.borderColor = "#ccc";
+                
                 listSection.classList.remove('selection-mode');
                 sendFab.style.display = 'none'; mainFab.style.display = 'flex';
                 document.querySelectorAll('.memory-card').forEach(card => card.classList.remove('selected'));
@@ -1080,174 +806,57 @@
 
         function toggleCardSelection(dateStr, timeId) {
             if (!isSelectionMode) return;
-            const card = document.getElementById(`card-${timeId}`);
-            const checkbox = document.getElementById(`cb-${timeId}`);
-            
+            const card = document.getElementById(`card-${timeId}`); const checkbox = document.getElementById(`cb-${timeId}`);
             const index = selectedMemories.indexOf(dateStr);
             if (index === -1) {
-                if (selectedMemories.length >= 10) {
-                    Swal.fire({ title: '上限到達', text: 'LINEの仕様上、一度に送れるのは10件までだ。', icon: 'warning', confirmButtonColor: '#06C755' });
-                    return;
-                }
-                selectedMemories.push(dateStr);
-                card.classList.add('selected'); checkbox.checked = true;
-            } else {
-                selectedMemories.splice(index, 1);
-                card.classList.remove('selected'); checkbox.checked = false;
-            }
+                if (selectedMemories.length >= 10) { Swal.fire({ title: '上限到達', text: 'LINEの仕様上、一度に送れるのは10件までだ。', icon: 'warning', confirmButtonColor: '#06C755' }); return; }
+                selectedMemories.push(dateStr); card.classList.add('selected'); checkbox.checked = true;
+            } else { selectedMemories.splice(index, 1); card.classList.remove('selected'); checkbox.checked = false; }
             updateSendFab();
         }
 
         function updateSendFab() {
             const sendFab = document.getElementById('send-multiple-fab');
-            if (selectedMemories.length > 0) {
-                sendFab.innerText = ` ${selectedMemories.length}件をLINEで送る`;
-                sendFab.style.backgroundColor = "#06C755";
-                sendFab.style.pointerEvents = "auto";
-                sendFab.style.transform = "translateX(-50%) scale(1.05)";
-            } else {
-                sendFab.innerText = ` カードを選択...`;
-                sendFab.style.backgroundColor = "#9e9e9e"; 
-                sendFab.style.pointerEvents = "none";
-                sendFab.style.transform = "translateX(-50%) scale(1.0)";
-            }
+            if (selectedMemories.length > 0) { sendFab.innerText = ` ${selectedMemories.length}件をLINEで送る`; sendFab.style.backgroundColor = "#06C755"; sendFab.style.pointerEvents = "auto"; sendFab.style.transform = "translateX(-50%) scale(1.05)";
+            } else { sendFab.innerText = ` カードを選択...`; sendFab.style.backgroundColor = "#9e9e9e"; sendFab.style.pointerEvents = "none"; sendFab.style.transform = "translateX(-50%) scale(1.0)"; }
         }
 
         async function shareSelectedMemories() {
             if (selectedMemories.length === 0) return;
-            if (!liff.isApiAvailable('shareTargetPicker')) {
-                Swal.fire({ title: 'エラー', text: 'この環境では共有機能が使えません。', icon: 'error', confirmButtonColor: '#06C755' });
-                return;
-            }
-
-            const timeIds = selectedMemories.map(d => new Date(d).getTime()).join(',');
-            const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${timeIds}&uid=${currentUserId}`;
-
+            if (!liff.isApiAvailable('shareTargetPicker')) { Swal.fire({ title: 'エラー', text: 'この環境では使えません。', icon: 'error', confirmButtonColor: '#06C755' }); return; }
+            const timeIds = selectedMemories.map(d => new Date(d).getTime()).join(','); const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${timeIds}&uid=${currentUserId}`;
             const bubbles = selectedMemories.map(dateStr => {
-                const urls = window.galleryData[dateStr];
-                const rawMemo = window.memoData[dateStr] || "";
-                const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "TACK カード");
+                const urls = window.galleryData[dateStr]; const rawMemo = window.memoData[dateStr] || ""; const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "空間メモ");
                 const imageUrl = (urls && urls.length > 0) ? urls[0] : "https://koransha.com/images/noimage.png"; 
-
-                return {
-                    type: "bubble",
-                    size: "micro",
-                    action: { type: "uri", label: "開く", uri: shareUrl },
-                    hero: { type: "image", url: imageUrl, size: "full", aspectRatio: "4:3", aspectMode: "cover" },
-                    body: {
-                        type: "box", layout: "vertical", paddingAll: "10px",
-                        contents: [ 
-                            { type: "text", text: memoText, weight: "bold", size: "sm", wrap: true, maxLines: 4 } 
-                        ]
-                    }
-                };
+                return { type: "bubble", size: "micro", action: { type: "uri", label: "開く", uri: shareUrl }, hero: { type: "image", url: imageUrl, size: "full", aspectRatio: "4:3", aspectMode: "cover" }, body: { type: "box", layout: "vertical", paddingAll: "10px", contents: [ { type: "text", text: memoText, weight: "bold", size: "sm", wrap: true, maxLines: 4 } ] } };
             });
-
-            const flexMessage = {
-                type: "flex",
-                altText: `${selectedMemories.length}件のおすすめカードが届きました`,
-                contents: { type: "carousel", contents: bubbles }
-            };
-
-            try {
-                const res = await liff.shareTargetPicker([flexMessage]);
-                if (res) {
-                    Swal.fire({ title: '送信完了', text: 'リストを共有しました。', icon: 'success', timer: 2000, showConfirmButton: false });
-                    toggleSelectionMode(); 
-                }
-            } catch (error) {
-                console.error("Share target picker failed", error);
-            }
+            try { const res = await liff.shareTargetPicker([{ type: "flex", altText: `${selectedMemories.length}件のメモが届きました`, contents: { type: "carousel", contents: bubbles } }]); if (res) { Swal.fire({ title: '送信完了', icon: 'success', timer: 2000, showConfirmButton: false }); toggleSelectionMode(); } } catch (error) {}
         }
 
         async function shareMemory(dateStr) {
-            if (!liff.isApiAvailable('shareTargetPicker')) {
-                Swal.fire({ title: 'エラー', text: 'この環境では共有機能が使えません。', icon: 'error', confirmButtonColor: '#06C755' });
-                return;
-            }
-
-            const urls = window.galleryData[dateStr];
-            const rawMemo = window.memoData[dateStr] || "";
-            const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "TACK カード");
+            if (!liff.isApiAvailable('shareTargetPicker')) return;
+            const urls = window.galleryData[dateStr]; const rawMemo = window.memoData[dateStr] || ""; const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "空間メモ");
             const imageUrl = (urls && urls.length > 0) ? urls[0] : "https://koransha.com/images/noimage.png"; 
-
-            const timeId = new Date(dateStr).getTime();
-            const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${timeId}&uid=${currentUserId}`;
-
-            const flexMessage = {
-                type: "flex",
-                altText: "TACKから写真が届きました",
-                contents: {
-                    type: "bubble",
-                    size: "kilo", 
-                    action: { type: "uri", label: "開く", uri: shareUrl },
-                    hero: {
-                        type: "image", url: imageUrl, size: "full", aspectRatio: "4:3", aspectMode: "cover"
-                    },
-                    body: {
-                        type: "box", layout: "vertical", paddingAll: "10px",
-                        contents: [
-                            { type: "text", text: memoText, weight: "bold", size: "sm", wrap: true, maxLines: 4 }
-                        ]
-                    }
-                }
-            };
-
-            try {
-                const res = await liff.shareTargetPicker([flexMessage]);
-                if (res) {
-                    Swal.fire({ title: '送信完了', text: 'LINEのトークに送信しました。', icon: 'success', timer: 2000, showConfirmButton: false });
-                }
-            } catch (error) {
-                console.error("Share target picker failed", error);
-                Swal.fire({ title: 'エラー', text: '送信をキャンセルしたか、エラーが発生しました。', icon: 'warning', confirmButtonColor: '#06C755' });
-            }
+            const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${new Date(dateStr).getTime()}&uid=${currentUserId}`;
+            try { const res = await liff.shareTargetPicker([{ type: "flex", altText: "TACKからメモが届きました", contents: { type: "bubble", size: "kilo", action: { type: "uri", label: "開く", uri: shareUrl }, hero: { type: "image", url: imageUrl, size: "full", aspectRatio: "4:3", aspectMode: "cover" }, body: { type: "box", layout: "vertical", paddingAll: "10px", contents: [ { type: "text", text: memoText, weight: "bold", size: "sm", wrap: true, maxLines: 4 } ] } } }]); if (res) Swal.fire({ title: '送信完了', icon: 'success', timer: 2000, showConfirmButton: false }); } catch (error) {}
         }
         
         async function main() { 
             try { 
                 if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') { initMap(); } 
                 await liff.init({ liffId: "2009431992-aQfZHA0X" }); 
-                if (!liff.isLoggedIn()) { 
-                    liff.login(); 
-                } else { 
-                    const profile = await liff.getProfile(); 
-                    currentUserId = profile.userId; 
-                    targetUserId = currentUserId; 
-                    
-                    console.log("Logged in user:", currentUserId); 
+                if (!liff.isLoggedIn()) { liff.login(); } else { 
+                    const profile = await liff.getProfile(); currentUserId = profile.userId; targetUserId = currentUserId; 
                     await checkPremiumStatus(currentUserId);
-
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const uidParam = urlParams.get('uid');
-                    const filterParam = urlParams.get('filter');
-
+                    const urlParams = new URLSearchParams(window.location.search); const uidParam = urlParams.get('uid'); const filterParam = urlParams.get('filter');
                     if (uidParam && filterParam) {
-                        targetUserId = uidParam; 
-                        filterIds = filterParam.split(',');
-                        isSharedMode = true; 
-
-                        document.querySelector('.fab-container').style.display = 'none';
-                        const modeBtn = document.getElementById('mode-toggle-btn');
-                        
-                        modeBtn.innerHTML = `<span class="material-symbols-outlined">home</span>自分のマップへ`;
-                        modeBtn.style.backgroundColor = "#06C755"; 
-                        modeBtn.style.color = "white";
-                        modeBtn.style.borderColor = "#06C755";
-                        modeBtn.style.pointerEvents = "auto"; 
-                        
-                        modeBtn.onclick = function() {
-                            window.location.href = "https://line.me/R/ti/p/@931bwuek"; 
-                        };
+                        targetUserId = uidParam; filterIds = filterParam.split(','); isSharedMode = true; 
+                        document.querySelector('.fab-container').style.display = 'none'; const modeBtn = document.getElementById('settings-btn');
+                        modeBtn.innerHTML = `<span class="material-symbols-outlined">home</span>自分のマップへ`; modeBtn.style.backgroundColor = "#06C755"; modeBtn.style.color = "white"; modeBtn.style.borderColor = "#06C755"; modeBtn.onclick = function() { window.location.href = "https://line.me/R/ti/p/@931bwuek"; };
                     }
-
-                    // 👇 今回の摩擦解消：fetchDataを確実に監視下に置く
                     await fetchData(); 
                 } 
-            } catch (e) { 
-                Swal.fire({ title: '起動エラー', text: "エラー発生: " + e.message, icon: 'error', confirmButtonColor: '#06C755' });
-                hideLoading(); 
-            } 
+            } catch (e) { Swal.fire({ title: '起動エラー', text: "エラー発生: " + e.message, icon: 'error', confirmButtonColor: '#06C755' }); hideLoading(); } 
         }
         main();
     </script>
