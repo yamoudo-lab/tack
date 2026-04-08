@@ -428,7 +428,7 @@
                 files.forEach(file => { const tempImg = document.createElement('img'); tempImg.className = 'thumb-img'; tempImg.style.border = "2px dashed #06C755"; tempImg.src = URL.createObjectURL(file); imgContainer.appendChild(tempImg); });
             }
 
-            Swal.fire({ title: 'アップロード開始', text: '裏側で保存しています...', icon: 'info', timer: 1500, showConfirmButton: false });
+            Swal.fire({ title: 'アップロード開始', text: '保存しています...', icon: 'info', timer: 1500, showConfirmButton: false });
             
             try {
                 const uploadPromises = files.map(async (file, i) => {
