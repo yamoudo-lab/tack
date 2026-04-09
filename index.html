@@ -253,7 +253,7 @@
         
         let currentPinCount = 0; 
         let isPremium = false; 
-        let isInitialMapLoad = true;
+        let isInitialMapLoad = true; // ★ 視点ジャンプ制御フラグ
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzoNA5nkGxxieeoE0Fz6-0BohFetn_AlxGXpjY9qhYW65nvbKNbQuxX2KbXL-rYLoPl/exec";
         
@@ -280,7 +280,6 @@
         function showLoading(text) { document.getElementById('loading').style.display = 'flex'; document.getElementById('loading').innerHTML = `<span class="spinner"></span> ${text}`; }
         function hideLoading() { document.getElementById('loading').style.display = 'none'; }
 
-        // ⚙️ コンソール管理
         function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
         function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
         
@@ -292,7 +291,6 @@
             });
         }
 
-        // 🎨 レイヤー選択ロジック
         function selectLayer(context, color) {
             if (context === 'input') {
                 currentInputLayer = color;
@@ -305,25 +303,20 @@
             }
         }
 
-        // 🔍 フィルターロジック
         function setFilter(color) {
             currentFilter = color;
             document.querySelectorAll('.filter-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(`flt-${color}`).classList.add('active');
-            
-            // ローカルキャッシュから再描画
             const cachedDataStr = localStorage.getItem("memoryMapCache_" + targetUserId);
             if (cachedDataStr) { renderData(JSON.parse(cachedDataStr)); }
             closeSettings();
         }
 
-        // 📍 動的ピン生成エンジン (Phase Shift)
         function getPinSvg(layerColor) {
             let fill = "#FF5252", stroke = "#A00000", weight = 1.5;
             if (layerColor === "green") { fill = "#06C755"; stroke = "#008000"; }
             else if (layerColor === "blue") { fill = "#2196F3"; stroke = "#0D47A1"; }
             else if (layerColor === "mono") { fill = "#FFFFFF"; stroke = "#111111"; weight = 2.5; }
-
             return {
                 path: "M12 2C7.6 2 4 5.6 4 10c0 7 8 12 8 12s8-5 8-12C20 5.6 16.4 2 12 2zm0 11.5c-2 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z",
                 fillColor: fill, fillOpacity: 1, strokeWeight: weight, strokeColor: stroke, scale: 1.1,
@@ -447,12 +440,23 @@
             } catch (error) { Swal.fire({ title: 'エラー', text: '写真の追加に失敗しました。', icon: 'error', confirmButtonColor: '#06C755' }); }
         }
 
+        function openEditModal(dateStr) { 
+            currentEditDate = dateStr; 
+            document.getElementById('edit-memo-input').value = window.memoData[dateStr] || ""; 
+            let savedLayer = window.layerData[dateStr] || "red";
+            if(savedLayer === "default" || savedLayer === "") savedLayer = "red";
+            selectLayer('edit', savedLayer);
+            document.getElementById('edit-modal').style.display = 'flex'; 
+        }
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
+        
+        // ★ Phase 2.5: 即時更新（オレンジ）UIへの完全な差し替え
         async function submitEdit() {
             const newMemoText = document.getElementById('edit-memo-input').value; 
             const targetLayer = currentEditLayer; // 選択されたレイヤーを退避
             closeEditModal(); 
             
-            // 📌 Phase Shift: 画面を止めず、対象のカードだけを「即時更新（オレンジ）」状態へ移行
+            // 画面を止めず、対象のカードだけを「即時更新（オレンジ）」状態へ移行
             const timeId = new Date(currentEditDate).getTime();
             const cardElement = document.getElementById('card-' + timeId);
             
@@ -480,7 +484,7 @@
             }
 
             try {
-                // 📌 Payloadに新しいテキストとレイヤー情報をセット
+                // Payloadに新しいテキストとレイヤー情報をセット
                 const payload = { userId: targetUserId, action: "update", date: currentEditDate, newMemo: newMemoText, layer: targetLayer };
                 
                 // 画面を止めずに裏側でGASへ送信
@@ -662,17 +666,14 @@
                     }); uploadedUrls = await Promise.all(uploadPromises);
                 }
 
-                // 📌 Payloadに currentInputLayer を追加
                 const payload = { userId: targetUserId, source: "liff", memo: memoText, gps: gpsText, images: uploadedUrls, layer: currentInputLayer };
 
-                // 通信開始
                 fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
                     .then(() => fetch(GAS_URL + "?userId=" + targetUserId)).then(res => res.json())
                     .then(freshData => { localStorage.setItem("memoryMapCache_" + targetUserId, JSON.stringify(freshData)); renderData(freshData); });
                 
                 closeModal();
                 
-                // 📌 Phase Shift: 失われていた「即時反映ダミーカード」の復活とレイヤー色の適用
                 let tempCardHtml = `<div class="memory-card" style="border: 2px dashed #06C755; background: #f0fdf4;">`;
                 tempCardHtml += `<div class="layer-dot ${currentInputLayer}"></div>`;
                 tempCardHtml += `<div class="memory-date" style="color:#06C755;">⏳ ただいま反映中...</div>`;
@@ -691,6 +692,7 @@
                 
             } catch (error) { Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' }); } finally { btn.innerText = "送信する"; btn.disabled = false; }
         }
+
         async function deleteMemory(dateStr) {
             const result = await Swal.fire({ title: '消去', text: "このデータを完全に削除しますか？", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff5252', cancelButtonColor: '#06C755', confirmButtonText: '削除する', cancelButtonText: 'やめる' });
             if (!result.isConfirmed) return;
@@ -719,14 +721,12 @@
 
             for (let i = data.length - 1; i > 0; i--) {
                 const row = data[i]; const date = row[0]; const typeOrText = row[1]; const colC = row[2] || ""; const colD = row[3] || ""; const colE = row[4] || ""; 
-                // 📌 Phase 2: F列からレイヤー色を取得（未定義・空欄・defaultの場合はred）
                 let layerColor = row[5] || "red"; if(layerColor === "default" || layerColor === "") layerColor = "red";
                 
                 if (!date) continue;
                 const timeId = new Date(date).getTime();
                 if (isSharedMode && !filterIds.includes(String(timeId))) continue; 
                 
-                // 🔍 フィルター判定
                 if (currentFilter !== 'all' && layerColor !== currentFilter) continue;
 
                 let textToShow = ""; let originalUrls = []; 
@@ -747,7 +747,6 @@
                             window.cardLocations.push({ date: date, lat: latNum, lng: lngNum });
                             const position = { lat: latNum, lng: lngNum };
                             
-                            // 📍 動的ピンの生成
                             const marker = new google.maps.Marker({ position: position, map: map, title: colC, icon: getPinSvg(layerColor) });
                             marker.addListener("click", () => { jumpToCard(date, latStr, lngStr); });
                             markers.push(marker); bounds.extend(position); hasPins = true;
@@ -761,7 +760,6 @@
                     cardHtml += `<button onclick="deleteMemory('${date}')" class="btn-delete"><span class="material-symbols-outlined">delete</span>削除</button>`;
                 }
                 
-                // 📌 レイヤーインジケーター（色付き丸）を追加
                 if (date) {
                     cardHtml += `<div class="layer-dot ${layerColor}"></div>`;
                     cardHtml += `<div class="memory-date">${new Date(date).toLocaleString('ja-JP')}</div>`;
@@ -798,14 +796,15 @@
                 cardHtml += `</div></div>`; listContainer.innerHTML += cardHtml; cardCounter++;
             }
 
+            // ★ 修正箇所：波括弧のエラーを解消し、初期化フラグの論理を正常化
             if (hasPins && map && !isInitialMapLoad) { 
                 if (markers.length === 1) { map.setCenter(markers[0].getPosition()); map.setZoom(15); } 
                 else { map.fitBounds(bounds); } 
             }
             isInitialMapLoad = false;
-        } // ← ★この「}」で renderData 関数を確実に閉じる
+        } // ← renderData 関数の完全な終端
 
-        function initMap(initialLat = 35.6895, initialLng = 139.6917, initialZoom = 5) {
+        function initMap(initialLat = 35.6895, initialLng = 139.6917, initialZoom = 5) { 
             map = new google.maps.Map(document.getElementById("map"), { 
                 center: { lat: initialLat, lng: initialLng }, 
                 zoom: initialZoom, 
@@ -824,7 +823,6 @@
 
         document.getElementById('memo-input').addEventListener('focus', function() { setTimeout(() => { this.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); });
 
-        // ⚙️ コンソールからの遷移用（複数選択）
         function startSelectionMode() {
             closeSettings();
             if (!isSelectionMode) toggleSelectionMode();
@@ -839,16 +837,15 @@
             
             if (isSelectionMode) {
                 btn.innerHTML = `<span class="material-symbols-outlined">close</span>キャンセル`;
-                btn.onclick = toggleSelectionMode; // 直接トグルに戻す
+                btn.onclick = toggleSelectionMode; 
                 btn.style.backgroundColor = "#ff5252"; btn.style.color = "white"; btn.style.borderColor = "#ff5252";
                 
                 listSection.classList.add('selection-mode');
                 sendFab.style.display = 'block'; mainFab.style.display = 'none';
                 selectedMemories = []; updateSendFab();
             } else {
-                // 通常の⚙️管理ボタンに戻す
                 btn.innerHTML = `<span class="material-symbols-outlined">settings</span> 管理`;
-                btn.onclick = openSettings; // 設定モーダルを開く処理へ
+                btn.onclick = openSettings; 
                 btn.style.backgroundColor = "rgba(255, 255, 255, 0.95)"; btn.style.color = "#555"; btn.style.borderColor = "#ccc";
                 
                 listSection.classList.remove('selection-mode');
@@ -902,7 +899,6 @@
                 if (!liff.isLoggedIn()) { liff.login(); } else { 
                     const profile = await liff.getProfile(); currentUserId = profile.userId; targetUserId = currentUserId; 
 
-                    // 📌 Phase Shift: 過去の記憶から初期視点を割り出し、空間のジャンプを防ぐ
                     let startLat = 35.6895, startLng = 139.6917, startZoom = 5;
                     try {
                         const cachedDataStr = localStorage.getItem("memoryMapCache_" + currentUserId);
@@ -913,7 +909,7 @@
                                     const coords = String(cachedData[i][4]).split(",");
                                     if(coords.length === 2) {
                                         startLat = parseFloat(coords[0]); startLng = parseFloat(coords[1]);
-                                        startZoom = 15; // 記憶があるなら最初からズーム
+                                        startZoom = 15; 
                                         break;
                                     }
                                 }
