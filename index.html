@@ -869,10 +869,31 @@
         
         async function main() { 
             try { 
-                if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') { initMap(); } 
                 await liff.init({ liffId: "2009431992-aQfZHA0X" }); 
                 if (!liff.isLoggedIn()) { liff.login(); } else { 
                     const profile = await liff.getProfile(); currentUserId = profile.userId; targetUserId = currentUserId; 
+
+                    // 📌 Phase Shift: 過去の記憶から初期視点を割り出し、空間のジャンプを防ぐ
+                    let startLat = 35.6895, startLng = 139.6917, startZoom = 5;
+                    try {
+                        const cachedDataStr = localStorage.getItem("memoryMapCache_" + currentUserId);
+                        if (cachedDataStr) {
+                            const cachedData = JSON.parse(cachedDataStr);
+                            for (let i = cachedData.length - 1; i > 0; i--) {
+                                if (cachedData[i][4]) {
+                                    const coords = String(cachedData[i][4]).split(",");
+                                    if(coords.length === 2) {
+                                        startLat = parseFloat(coords[0]); startLng = parseFloat(coords[1]);
+                                        startZoom = 15; // 記憶があるなら最初からズーム
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    } catch(e) {}
+                    
+                    if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') { initMap(startLat, startLng, startZoom); } 
+
                     await checkPremiumStatus(currentUserId);
                     const urlParams = new URLSearchParams(window.location.search); const uidParam = urlParams.get('uid'); const filterParam = urlParams.get('filter');
                     if (uidParam && filterParam) {
