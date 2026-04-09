@@ -496,7 +496,7 @@
                     });
                 
                 // ローディング画面の代わりに、邪魔にならないトースト通知を出す
-                Swal.fire({ title: '更新完了！', text: '裏側で変更を定着させています。', icon: 'success', timer: 2000, showConfirmButton: false });
+                Swal.fire({ title: '更新完了！', text: '変更しています。', icon: 'success', timer: 2000, showConfirmButton: false });
             } catch (error) { 
                 Swal.fire({ title: 'エラー', text: '更新エラー: ' + error, icon: 'error', confirmButtonColor: '#06C755' }); 
                 if (cardElement) cardElement.classList.remove('updating'); 
