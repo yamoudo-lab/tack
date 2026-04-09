@@ -250,7 +250,8 @@
         const cloudFunc = firebase.functions();
         
         let currentPinCount = 0; 
-        let isPremium = false;   
+        let isPremium = false; 
+        let isInitialMapLoad = true;
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzoNA5nkGxxieeoE0Fz6-0BohFetn_AlxGXpjY9qhYW65nvbKNbQuxX2KbXL-rYLoPl/exec";
         
