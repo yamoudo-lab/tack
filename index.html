@@ -846,7 +846,7 @@
                 btn.style.backgroundColor = "#ff5252"; btn.style.color = "white"; btn.style.borderColor = "#ff5252";
                 
                 listSection.classList.add('selection-mode');
-                sendFab.style.display = 'block'; mainFab.style.display = 'none';
+                sendFab.style.display = 'flex'; mainFab.style.display = 'none'; // ★ block から flex へ変更
                 selectedMemories = []; updateSendFab();
             } else {
                 btn.innerHTML = `<span class="material-symbols-outlined">settings</span> 管理`;
