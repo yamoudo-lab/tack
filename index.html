@@ -874,8 +874,18 @@
 
         function updateSendFab() {
             const sendFab = document.getElementById('send-multiple-fab');
-            if (selectedMemories.length > 0) { sendFab.innerText = ` ${selectedMemories.length}件をLINEで送る`; sendFab.style.backgroundColor = "#06C755"; sendFab.style.pointerEvents = "auto"; sendFab.style.transform = "translateX(-50%) scale(1.05)";
-            } else { sendFab.innerText = ` カードを選択...`; sendFab.style.backgroundColor = "#9e9e9e"; sendFab.style.pointerEvents = "none"; sendFab.style.transform = "translateX(-50%) scale(1.0)"; }
+            const lineBtn = document.getElementById('send-line-btn'); // 追加
+            if (selectedMemories.length > 0) { 
+                lineBtn.innerText = `${selectedMemories.length}件をLINEへ`; // 変更
+                sendFab.style.pointerEvents = "auto"; 
+                sendFab.style.opacity = "1";
+                sendFab.style.transform = "translateX(-50%) scale(1.05)";
+            } else { 
+                lineBtn.innerText = `カードを選択...`; // 変更
+                sendFab.style.pointerEvents = "none"; 
+                sendFab.style.opacity = "0.5";
+                sendFab.style.transform = "translateX(-50%) scale(1.0)"; 
+            }
         }
 
         async function shareSelectedMemories() {
