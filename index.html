@@ -885,6 +885,26 @@
             try { const res = await liff.shareTargetPicker([{ type: "flex", altText: `${selectedMemories.length}件のメモが届きました`, contents: { type: "carousel", contents: bubbles } }]); if (res) { Swal.fire({ title: '送信完了', icon: 'success', timer: 2000, showConfirmButton: false }); toggleSelectionMode(); } } catch (error) {}
         }
 
+        function generateQRCode() {
+            if (selectedMemories.length === 0) return;
+            
+            // 共有用URLを生成
+            const timeIds = selectedMemories.map(d => new Date(d).getTime()).join(','); 
+            const shareUrl = `https://liff.line.me/2009431992-aQfZHA0X?filter=${timeIds}&uid=${currentUserId}`;
+
+            // 無料のQR生成API（QR Server）を叩いて画像化
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
+
+            // 画面にQRコードを美しく表示
+            Swal.fire({
+                title: '空間の切り出し（QR）',
+                html: `<div style="font-size:0.85rem; color:#666; margin-bottom:15px;">このQRを読み取らせると、<br>選択した ${selectedMemories.length} 件のカードだけが相手のマップに表示される。</div>
+                       <img src="${qrApiUrl}" style="width:200px; height:200px; border-radius:10px; border:4px solid #fff; box-shadow:0 4px 15px rgba(0,0,0,0.15);">`,
+                confirmButtonColor: '#333',
+                confirmButtonText: '閉じる'
+            });
+        }
+
         async function shareMemory(dateStr) {
             if (!liff.isApiAvailable('shareTargetPicker')) return;
             const urls = window.galleryData[dateStr]; const rawMemo = window.memoData[dateStr] || ""; const memoText = rawMemo.length > 40 ? rawMemo.substring(0, 40) + "..." : (rawMemo || "空間メモ");
