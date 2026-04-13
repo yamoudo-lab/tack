@@ -741,7 +741,7 @@
 
                 if (typeOrText === "画像") { textToShow = "📷 写真を記録しました"; } 
                 else if (typeOrText === "位置情報") { 
-                    textToShow = "📍 " + colC;
+                    textToShow = colC; // 📍を消去し、お前が入力したテキスト（☕等）だけを純粋に出力する
                     if (colE) {
                         const latLngArr = String(colE).split(",");
                         if(latLngArr.length === 2 && map) {
