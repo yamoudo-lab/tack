@@ -796,7 +796,7 @@
                     cardHtml += `<button onclick="triggerAppendPhoto('${date}')" class="btn btn-photo"><span class="material-symbols-outlined">add_a_photo</span>写真追加</button>`;
                     cardHtml += `<button onclick="shareMemory('${date}')" class="btn btn-share">LINEで送る</button>`;
                     // ★ 単発カード用のQRボタンに「QR」の文字を追加し、バランスを整える
-                    cardHtml += `<button onclick="generateSingleQRCode('${date}')" class="btn" style="background:#333; color:white; border:none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); padding: 8px 15px;"><span class="material-symbols-outlined" style="font-size:18px; margin:0;">qr_code_2</span> QR</button>`;
+                    cardHtml += `<button onclick="generateSingleQRCode('${date}')" class="btn" style="background:#333; color:white; border:none; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"><span class="material-symbols-outlined" style="font-size:18px; margin:0;">qr_code_2</span> QR</button>`;
                 } else {
                     cardHtml += `<button onclick="importMemory('${date}', '${latStr}', '${lngStr}')" class="btn" style="background-color: #FFF3E0; color: #E65100; border-color: #FFCC80;"><span class="material-symbols-outlined">download</span>自分のマップに保存</button>`;
                 }
