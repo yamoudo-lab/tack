@@ -656,7 +656,7 @@
             }
 
             if (targetMergeDate) {
-                const res = await Swal.fire({ title: '📌 既存のメモに追記しますか？', html: `この場所にはすでに作成済みのメモがあります。<br>新しくピンを打たずに、既存のメモに追加しますか？`, ...
+                const res = await Swal.fire({ title: '📌 既存のメモに追記しますか？', html: `この場所にはすでに作成済みのメモがあります。<br>新しくピンを打たずに、既存のメモに追加しますか？`, icon: 'question', showCancelButton: true, confirmButtonColor: '#06C755', confirmButtonText: '追加する', cancelButtonText: 'ずらす' });
                 if (res.isConfirmed) { await executeMerge(targetMergeDate); return; } else if (res.dismiss === Swal.DismissReason.cancel) { currentLat += 0.0003; currentLng -= 0.0003; } else { return; }
             }
 
