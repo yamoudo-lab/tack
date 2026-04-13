@@ -424,7 +424,7 @@
             if (cardElement) {
                 let imgContainer = cardElement.querySelector('div[style*="overflow-x: auto"]');
                 if (!imgContainer) {
-                    imgContainer = document.createElement('div'); imgContainer.style.cssText = "display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;";
+                    imgContainer = document.createElement('div'); imgContainer.style.cssText = "display: flex; overflow-x: auto; gap: 6px; margin-bottom: 15px; padding-bottom: 5px;";
                     cardElement.insertBefore(imgContainer, cardElement.querySelector('.btn-container'));
                 }
                 files.forEach(file => { const tempImg = document.createElement('img'); tempImg.className = 'thumb-img'; tempImg.style.border = "2px dashed #06C755"; tempImg.src = URL.createObjectURL(file); imgContainer.appendChild(tempImg); });
