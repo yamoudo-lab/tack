@@ -685,7 +685,7 @@
                 tempCardHtml += `<div class="memory-date" style="color:#06C755;">⏳ ただいま反映中...</div>`;
                 if (memoText) tempCardHtml += `<div class="memory-text">${autoLink(memoText)}</div>`;
                 if (uploadedUrls.length > 0) {
-                    tempCardHtml += `<div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px;">`;
+                    tempCardHtml += `<div style="display: flex; overflow-x: auto; gap: 6px; margin-bottom: 15px; padding-bottom: 5px;">`;
                     for(let j=0; j<uploadedUrls.length; j++) {
                         tempCardHtml += `<img src="${uploadedUrls[j]}" class="thumb-img">`;
                     }
