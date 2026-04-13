@@ -383,7 +383,7 @@
             } catch (e) {}
 
             if (!isPremium && currentPinCount >= 20) {
-                const result = await Swal.fire({ title: '📌 空間の限界', html: `無料プランの20個を使い切りました。<br><br><b>TACK Premium</b>へ拡張しますか？`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#06C755', confirmButtonText: '🚀 拡張する', cancelButtonText: '今はやめる', heightAuto: false });
+                const result = await Swal.fire({ title: '📌 保存上限に達しました', html: `無料プランの保存枠（20件）を使い切りました。<br><br><b>TACK Premium</b>へアップグレードしますか？`, ...
                 if (result.isConfirmed) {
                     if (!currentUserId) { Swal.fire({ title: '認証エラー', text: 'LINE IDを取得できませんでした。', icon: 'error' }); return; }
                     showLoading("決済画面へ安全に接続中...");
