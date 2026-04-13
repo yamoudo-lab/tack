@@ -642,7 +642,7 @@
                     const oldMemo = window.memoData[targetDate] || ""; const newMemo = oldMemo ? oldMemo + "\n\n" + memoText : memoText;
                     await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ userId: targetUserId, action: "update", date: targetDate, newMemo: newMemo }) }); // レイヤーはそのまま
                 }
-                closeModal(); Swal.fire({ title: '追加完了', text: '既存のメモに追記しました。', icon: 'success', ...
+                closeModal(); Swal.fire({ title: '追加完了', text: '既存のメモに追記しました。', icon: 'success', timer: 2000, showConfirmButton: false });
             } catch (error) { Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' }); } finally { btn.innerText = "送信する"; btn.disabled = false; }
         }
 
