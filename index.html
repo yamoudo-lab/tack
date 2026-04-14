@@ -945,39 +945,49 @@
         async function main() { 
             try { 
                 await liff.init({ liffId: "2009431992-aQfZHA0X" }); 
-                if (!liff.isLoggedIn()) { liff.login(); } else { 
-                    const profile = await liff.getProfile(); currentUserId = profile.userId; targetUserId = currentUserId; 
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const uidParam = urlParams.get('uid');
+                const filterParam = urlParams.get('filter');
 
-                    let startLat = 35.6895, startLng = 139.6917, startZoom = 5;
-                    try {
-                        const cachedDataStr = localStorage.getItem("memoryMapCache_" + currentUserId);
-                        if (cachedDataStr) {
-                            const cachedData = JSON.parse(cachedDataStr);
-                            for (let i = cachedData.length - 1; i > 0; i--) {
-                                if (cachedData[i][4]) {
-                                    const coords = String(cachedData[i][4]).split(",");
-                                    if(coords.length === 2) {
-                                        startLat = parseFloat(coords[0]); startLng = parseFloat(coords[1]);
-                                        startZoom = 15; 
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    } catch(e) {}
+                if (uidParam && filterParam) {
+                    // 🔵 共有モード：ログイン不要で閲覧を許可
+                    targetUserId = uidParam;
+                    filterIds = filterParam.split(',');
+                    isSharedMode = true; 
                     
-                    if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') { initMap(startLat, startLng, startZoom); } 
+                    document.querySelector('.fab-container').style.display = 'none';
+                    const modeBtn = document.getElementById('settings-btn');
+                    modeBtn.innerHTML = `<span class="material-symbols-outlined">home</span> 自分のマップへ`;
+                    modeBtn.style.backgroundColor = "#06C755";
+                    modeBtn.style.color = "white";
+                    modeBtn.style.borderColor = "#06C755";
 
-                    await checkPremiumStatus(currentUserId);
-                    const urlParams = new URLSearchParams(window.location.search); const uidParam = urlParams.get('uid'); const filterParam = urlParams.get('filter');
-                    if (uidParam && filterParam) {
-                        targetUserId = uidParam; filterIds = filterParam.split(','); isSharedMode = true; 
-                        document.querySelector('.fab-container').style.display = 'none'; const modeBtn = document.getElementById('settings-btn');
-                        modeBtn.innerHTML = `<span class="material-symbols-outlined">home</span>自分のマップへ`; modeBtn.style.backgroundColor = "#06C755"; modeBtn.style.color = "white"; modeBtn.style.borderColor = "#06C755"; modeBtn.onclick = function() { window.location.href = "https://line.me/R/ti/p/@931bwuek"; };
+                    // 「自分のマップへ」を押した時に初めてログインを要求する
+                    modeBtn.onclick = function() { 
+                        if (!liff.isLoggedIn()) {
+                            liff.login({ redirectUri: "https://liff.line.me/2009431992-aQfZHA0X" });
+                        } else {
+                            window.location.href = "https://liff.line.me/2009431992-aQfZHA0X";
+                        }
+                    };
+                    
+                    // 地図の初期位置設定（共有データから取得）
+                    let startLat = 35.6895, startLng = 139.6917, startZoom = 5;
+                    await fetchData(); // ログインなしでデータを取得
+                } else {
+                    // 🟢 通常モード（自分のマップ）：ログイン必須
+                    if (!liff.isLoggedIn()) {
+                        liff.login();
+                    } else {
+                        const profile = await liff.getProfile();
+                        currentUserId = profile.userId;
+                        targetUserId = currentUserId;
+                        await checkPremiumStatus(currentUserId);
+                        await fetchData();
                     }
-                    await fetchData(); 
                 } 
-            } catch (e) { Swal.fire({ title: '起動エラー', text: "エラー発生: " + e.message, icon: 'error', confirmButtonColor: '#06C755' }); hideLoading(); } 
+            } catch (e) { /* エラー処理 */ } 
         }
         main();
     </script>
