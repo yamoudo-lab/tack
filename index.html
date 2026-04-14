@@ -617,6 +617,14 @@
         function removeFile(index) { stagingFiles.splice(index, 1); renderPreviews(); }
 
         async function importMemory(dateStr, latStr, lngStr) {
+            // 未ログインならログインさせる
+            if (!liff.isLoggedIn()) {
+                const res = await Swal.fire({ title: 'ログインが必要です', text: "保存するにはLINEの許可が必要です。", icon: 'info', showCancelButton: true, confirmButtonText: '許可して保存' });
+                if (res.isConfirmed) liff.login();
+                return;
+            }
+            
+            // ログイン済みならそのまま処理（以下、既存のコード）
             const result = await Swal.fire({ title: '自分のマップに保存', text: "このカードを自分のTACKにインポートしますか？", icon: 'question', showCancelButton: true, confirmButtonColor: '#06C755', confirmButtonText: '保存する' });
             if (!result.isConfirmed) return;
             showLoading("インポート中...");
