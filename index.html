@@ -583,8 +583,27 @@
             const statusText = document.getElementById('gps-status'); statusText.innerText = "⏳ GPS Loading..."; statusText.style.color = "blue"; 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    function(position) { currentLat = position.coords.latitude; currentLng = position.coords.longitude; statusText.innerText = isRecenter ? "現在地に戻りました" : "✅ 現在地を取得しました"; statusText.style.color = "#06C755"; initModalMap(currentLat, currentLng); },
-                    function(error) { statusText.innerText = "❌ 取得失敗。地図を動かして場所を決めてください。"; statusText.style.color = "red"; if (!currentLat) currentLat = 35.681236; if (!currentLng) currentLng = 139.767125; initModalMap(currentLat, currentLng); }, 
+                    function(position) { 
+                        currentLat = position.coords.latitude; currentLng = position.coords.longitude; 
+                        statusText.innerText = isRecenter ? "現在地に戻りました" : "✅ 現在地を取得しました"; 
+                        statusText.style.color = "#06C755"; 
+                        initModalMap(currentLat, currentLng); 
+                    },
+                    function(error) { 
+                        // 裏側のステータスはエラーにするが、デフォルトのピンは立てておく
+                        statusText.innerText = "❌ 取得失敗。地図を動かして場所を決めてください。"; statusText.style.color = "red"; 
+                        if (!currentLat) currentLat = 35.681236; if (!currentLng) currentLng = 139.767125; 
+                        initModalMap(currentLat, currentLng); 
+
+                        // 💡 現場のおっちゃん向け・心理ハックポップアップ
+                        Swal.fire({
+                            title: '現在地がわかりません！',
+                            html: 'スマホの<b>「位置情報（GPS）」</b>がオフになっているか、LINEからのアクセスが許可されていません。<br><br>設定をオンにしてから、もう一度試してみてね！',
+                            icon: 'warning',
+                            confirmButtonColor: '#06C755',
+                            confirmButtonText: 'わかった'
+                        });
+                    }, 
                     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             }
