@@ -667,29 +667,25 @@
             } catch (error) { Swal.fire({ title: 'エラー', text: '保存に失敗しました。', icon: 'error', confirmButtonColor: '#06C755' }); } finally { hideLoading(); }
         }
 
-        async function executeMerge(targetDate) {
+        // 引数に targetTimeId を追加
+        async function executeMerge(targetDate, targetTimeId) {
             const btn = document.querySelector('#input-modal .btn-submit'); 
-            btn.innerText = "Merging..."; btn.disabled = true; 
+            if(btn) { btn.innerText = "Merging..."; btn.disabled = true; }
 
-            // 📌 Phase Shift: モーダルを閉じる前に、入力された値と写真を「退避」させる
             const memoText = document.getElementById('memo-input').value;
             const filesToUpload = [...stagingFiles]; 
 
-            // 📌 即時仮反映（Optimistic UI）: 対象のカードを緑色に光らせる
-            const timeId = new Date(targetDate).getTime();
-            const cardElement = document.getElementById('card-' + timeId);
+            // 📌 日付からの推測をやめ、渡された ID でカードを確実にロックオン
+            const cardElement = document.getElementById('card-' + targetTimeId);
 
             if (cardElement) {
-                // 緑の破線と背景色で「追記中」を演出
-                cardElement.style.border = "2px dashed #06C755";
-                cardElement.style.backgroundColor = "#f0fdf4";
-                cardElement.style.opacity = "0.9";
+                // 強制的にUIを書き換える
+                cardElement.style.cssText = "border: 2px dashed #06C755 !important; background-color: #f0fdf4 !important; opacity: 0.9;";
                 cardElement.style.pointerEvents = "none";
 
                 const dateEl = cardElement.querySelector('.memory-date');
                 if (dateEl) dateEl.innerHTML = `<span style="color:#06C755;">⏳ ただいま追記中...</span>`;
 
-                // 画像のプレビューを仮追加
                 if (filesToUpload.length > 0) {
                     let imgContainer = cardElement.querySelector('div[style*="overflow-x: auto"]');
                     if (!imgContainer) {
@@ -700,13 +696,12 @@
                     filesToUpload.forEach(file => {
                         const tempImg = document.createElement('img');
                         tempImg.className = 'thumb-img';
-                        tempImg.style.border = "2px dashed #06C755";
+                        tempImg.style.cssText = "border: 2px dashed #06C755 !important; width: 100px; height: 100px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); flex-shrink: 0;";
                         tempImg.src = URL.createObjectURL(file);
                         imgContainer.appendChild(tempImg);
                     });
                 }
 
-                // メモテキストの仮追加
                 if (memoText) {
                     let textEl = cardElement.querySelector('.memory-text');
                     if (textEl) {
@@ -721,11 +716,12 @@
                     }
                 }
                 
-                // カードの位置まで自動スクロールして見せる
-                cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // 少し遅延させてから確実にスクロール（DOM更新との競合を防ぐ）
+                setTimeout(() => { cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+            } else {
+                console.warn("対象のカードが見つかりません: card-" + targetTimeId);
             }
 
-            // 📌 画面を止めるのをやめ、最速でモーダルを閉じる
             closeModal(); 
 
             try {
@@ -747,12 +743,11 @@
                 if (memoText) {
                     const oldMemo = window.memoData[targetDate] || ""; 
                     const newMemo = oldMemo ? oldMemo + "\n\n" + memoText : memoText;
-                    await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ userId: targetUserId, action: "update", date: targetDate, newMemo: newMemo }) }); // レイヤーはそのまま
+                    await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ userId: targetUserId, action: "update", date: targetDate, newMemo: newMemo }) });
                 }
                 
                 Swal.fire({ title: '追記完了', text: '既存のメモに反映しました。', icon: 'success', timer: 2000, showConfirmButton: false });
 
-                // 最新データを取得して再描画（ここで緑枠が外れて正式なカードに戻る）
                 fetch(GAS_URL + "?userId=" + targetUserId)
                     .then(res => res.json())
                     .then(freshData => { 
@@ -764,10 +759,12 @@
                 Swal.fire({ title: 'エラー', text: error, icon: 'error', confirmButtonColor: '#06C755' }); 
             } finally { 
                 if(document.querySelector('#input-modal')) {
-                    btn.innerText = "送信する"; btn.disabled = false; 
+                    const finalBtn = document.querySelector('#input-modal .btn-submit');
+                    if(finalBtn) { finalBtn.innerText = "送信する"; finalBtn.disabled = false; }
                 }
             }
         }
+        
         async function submitData() {
             if (modalMap) { currentLat = modalMap.getCenter().lat(); currentLng = modalMap.getCenter().lng(); }
             if (!currentLat || !currentLng) { Swal.fire({ title: '注意', text: '場所が決定されていません。', icon: 'warning', confirmButtonColor: '#06C755' }); return; }
