@@ -1155,6 +1155,56 @@
                 hideLoading(); 
             } 
         }
+        // 🎯 現在地へ地図をスナップさせる（積分と現在地の同期）
+        function snapToCurrentLocation() {
+            const btnIcon = document.querySelector('#snap-to-me-btn .material-symbols-outlined');
+            btnIcon.style.color = "#FF9800"; // 取得中（オレンジ）
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const pos = { lat: lat, lng: lng };
+                        
+                        if (map) {
+                            // 地図を滑らかに移動し、ズームを合わせる
+                            map.panTo(pos);
+                            map.setZoom(16);
+                            
+                            // お前の現在地を示す「青い点（肉体の座標）」を描画
+                            if (!currentLocationMarker) {
+                                currentLocationMarker = new google.maps.Marker({
+                                    map: map,
+                                    icon: {
+                                        path: google.maps.SymbolPath.CIRCLE,
+                                        scale: 7,
+                                        fillColor: "#4285F4",
+                                        fillOpacity: 1,
+                                        strokeWeight: 2.5,
+                                        strokeColor: "#FFFFFF"
+                                    },
+                                    zIndex: 999 // 他のピンより必ず上に表示
+                                });
+                            }
+                            currentLocationMarker.setPosition(pos);
+                        }
+                        btnIcon.style.color = "#06C755"; // 完了（緑に戻す）
+                    },
+                    function(error) {
+                        btnIcon.style.color = "#d32f2f"; // エラー（赤）
+                        setTimeout(() => { btnIcon.style.color = "#06C755"; }, 2000); // 2秒で戻る
+                        Swal.fire({
+                            title: '現在地がわかりません',
+                            html: 'GPSがオフになっているか、電波が届いていないようだ。',
+                            icon: 'warning',
+                            confirmButtonColor: '#06C755'
+                        });
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            }
+        }
         main();
     </script>
 </body>
