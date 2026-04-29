@@ -476,12 +476,23 @@
             } catch (error) { Swal.fire({ title: 'エラー', text: '写真の追加に失敗しました。', icon: 'error', confirmButtonColor: '#06C755' }); }
         }
 
-        function openEditModal(dateStr) { 
+        function openEditModal(dateStr, lat, lng) { 
             currentEditDate = dateStr; 
             document.getElementById('edit-memo-input').value = window.memoData[dateStr] || ""; 
             let savedLayer = window.layerData[dateStr] || "red";
             if(savedLayer === "default" || savedLayer === "") savedLayer = "red";
             selectLayer('edit', savedLayer);
+
+            // 🗺 地図の初期化と再配置
+            let pos = { lat: lat ? parseFloat(lat) : currentLat || 35.681236, lng: lng ? parseFloat(lng) : currentLng || 139.767125 };
+            if (!editModalMap) {
+                editModalMap = new google.maps.Map(document.getElementById("edit-modal-map"), {
+                    center: pos, zoom: 18, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, gestureHandling: "greedy"
+                });
+            } else {
+                editModalMap.setCenter(pos);
+            }
+
             document.getElementById('edit-modal').style.display = 'flex'; 
         }
         function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
